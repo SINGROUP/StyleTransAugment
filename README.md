@@ -7,4 +7,11 @@ Usage:
 
 ```bash
 git clone git@github.com:HuangJiaLian/AFM-Augmentation.git
+# Conda environment installation
+cd ASD-AFM-dev/
+conda env create -f environment.yml
+conda activate ml
+cp /etc/OpenCL/vendors/nvidia.icd $CONDA_PREFIX'/etc/OpenCL/vendors/'
+# Compile extensions by running 
+./build.sh
 ```
