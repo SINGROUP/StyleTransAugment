@@ -5,13 +5,27 @@ This project relies on the [ASD-AFM-dev](https://github.com/SINGROUP/ASD-AFM-dev
 
 Usage:
 
+Clone this project:
 ```bash
 git clone git@github.com:HuangJiaLian/AFM-Augmentation.git
+```
+
+Create and activate a conda environment:
+```bash
 # Conda environment installation
 cd ASD-AFM-dev/
 conda env create -f environment.yml
 conda activate ml
+```
+
+Change to a GPU node (My case)
+```bash
+srun -p gpushort --gres=gpu:4 --constraint=pascal  --time=4:00:00 --mem=6000M --pty bash
+```
+
+
+Compile extensions by running 
+```
 cp /etc/OpenCL/vendors/nvidia.icd $CONDA_PREFIX'/etc/OpenCL/vendors/'
-# Compile extensions by running 
 ./build.sh
 ```
