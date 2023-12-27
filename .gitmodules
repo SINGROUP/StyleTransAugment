@@ -1,0 +1,3 @@
+[submodule "ASD-AFM-dev"]
+	path = ASD-AFM-dev
+	url = git@github.com:SINGROUP/ASD-AFM-dev.git
