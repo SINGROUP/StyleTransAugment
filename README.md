@@ -23,7 +23,6 @@ Change to a GPU node (My case)
 srun -p gpushort --gres=gpu:4 --constraint=pascal  --time=4:00:00 --mem=6000M --pty bash
 ```
 
-
 Compile extensions by running 
 ```
 cp /etc/OpenCL/vendors/nvidia.icd $CONDA_PREFIX'/etc/OpenCL/vendors/'
