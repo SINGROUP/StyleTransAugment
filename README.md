@@ -3,10 +3,9 @@ Enhancing AFM Image Analysis and Prediction through Machine Learning and Data Au
 
 This project relies on the [ASD-AFM-dev](https://github.com/SINGROUP/ASD-AFM-dev) data-augmentation branch. 
 
-Usage:
+## Usage
 
-
-1. Preparations
+### 1. Preparations
 Clone this project:
 ```bash
 git clone git@github.com:HuangJiaLian/AFM-Augmentation.git
@@ -32,9 +31,12 @@ cp /etc/OpenCL/vendors/nvidia.icd $CONDA_PREFIX'/etc/OpenCL/vendors/'
 ./build.sh
 ```
 
-2. Dataload demostration
+### 2. Dataload demostration
 ```
 python 1_dataload.py 
 ```
 Several input-label pairs that look like the following would be stored in the folder temp. 
 ![](temp/input_label.png)
+
+### 3. Style translation 
+
