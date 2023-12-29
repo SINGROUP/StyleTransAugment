@@ -42,4 +42,5 @@ Several input-label pairs that look like the following would be stored in the fo
 ```
 python 2_augment.py
 ```
+
 ![](temp/original_vs_generated.png)
