@@ -117,13 +117,13 @@ def main():
         for s in range(nz):
             # Inputs
             img = batch[0][0][0][0][:, :, s]
-            axs[0, s].imshow(img)
+            axs[0, s].imshow(img, cmap='gray')
             axs[0, s].set_xticks([])
             axs[0, s].set_yticks([])
 
             # Label
             ref = batch[1][0][0][:, :, int(s*step)]
-            axs[1, s].imshow(ref)
+            axs[1, s].imshow(ref, cmap='gray')
             axs[1, s].set_xticks([])
             axs[1, s].set_yticks([])
         plt.savefig('temp/input_label_ib_{}.png'.format(ib))

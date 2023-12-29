@@ -5,6 +5,8 @@ This project relies on the [ASD-AFM-dev](https://github.com/SINGROUP/ASD-AFM-dev
 
 Usage:
 
+
+1. Preparations
 Clone this project:
 ```bash
 git clone git@github.com:HuangJiaLian/AFM-Augmentation.git
@@ -16,6 +18,7 @@ Create and activate a conda environment:
 cd ASD-AFM-dev/
 conda env create -f environment.yml
 conda activate ml
+git checkout data-augmentation
 ```
 
 Change to a GPU node (My case)
@@ -28,3 +31,10 @@ Compile extensions by running
 cp /etc/OpenCL/vendors/nvidia.icd $CONDA_PREFIX'/etc/OpenCL/vendors/'
 ./build.sh
 ```
+
+2. Dataload demostration
+```
+python 1_dataload.py 
+```
+Several input-label pairs that look like the following would be stored in the folder temp. 
+![](temp/input_label.png)
