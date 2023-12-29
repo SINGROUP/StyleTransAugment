@@ -1,0 +1,32 @@
+avg_best_epochs: 10
+batch_log_path: batches.log
+batch_size: 3
+box_res:
+- 0.125
+- 0.125
+- 0.1
+comm_backend: nccl
+data_dir: /scratch/phys/project/sin/AFM_Hartree_DB/AFM_sims/striped/Water-Au111/
+epochs: 1000
+loss_labels:
+- MSE (Pos.)
+loss_weights: []
+lr: 0.001
+num_workers: 4
+peak_std: 0.2
+pred_batches: 20
+predict: true
+print_interval: 10
+random_seed: 0
+run_dir: ./
+test: true
+timings: true
+train: true
+urls:
+  test: Water-K-{1..10}_test_{0..7}.tar
+  train: Water-K-{1..10}_train_{0..31}.tar
+  val: Water-K-{1..10}_val_{0..7}.tar
+z_lims:
+- -2.9
+- 0.5
+zmin: -2.5
