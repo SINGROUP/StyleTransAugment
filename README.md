@@ -42,5 +42,8 @@ Several input-label pairs that look like the following would be stored in the fo
 ```
 python 2_augment.py 
 ```
+Several images named like `style_translate_1.png` appears in the root directory, which look like this:
 
 ![](temp/original_vs_generated.png)
+
+where first row of images are original PPAFM images at different heights, while the second row are the corresponding style-transfored images. 
