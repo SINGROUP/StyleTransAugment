@@ -40,7 +40,7 @@ Several input-label pairs that look like the following would be stored in the fo
 
 ### 3. Style translation 
 ```
-./2_run.sh
+python 2_augment.py 
 ```
 
 ![](temp/original_vs_generated.png)
