@@ -31,6 +31,7 @@ from asdafm.graph.models            import PosNetAdaptive
 from asdafm.parsing_utils           import update_config
 from asdafm.logging                 import LossLogPlot, SyncedLoss
 
+# This is used to load cycle GAN model
 import argparse
 
 def batch_to_device(batch, device):
@@ -79,12 +80,8 @@ def apply_preprocessing(batch, cfg, gen_ab=None):
 
 def make_webDataloader(cfg, mode='train', gen_ab=None):
     
-    # Three modes
     assert mode in ['train', 'val', 'test'], mode
-
     shard_list = os.path.join(cfg['data_dir'], cfg['urls'][mode])
-
-    #print('Shard_list: {}'.format(shard_list))
     apply_preprocessing_ = partial(apply_preprocessing, cfg=cfg, gen_ab=gen_ab)
 
     dataset = wds.WebDataset(dl.ShardList(shard_list, world_size=cfg['world_size'], rank=cfg['global_rank'],
@@ -99,7 +96,6 @@ def make_webDataloader(cfg, mode='train', gen_ab=None):
     dataset.append(dl.batched(cfg['batch_size'])) # Gather samples into batches
     dataset = dataset.map(apply_preprocessing_) # Preprocess
 
-    # Dataloader
     dataloader = wds.WebLoader(dataset, num_workers=cfg['num_workers'], batch_size=None, pin_memory=True,
         collate_fn=dl.default_collate, persistent_workers=True)
     
@@ -107,6 +103,7 @@ def make_webDataloader(cfg, mode='train', gen_ab=None):
 
 def make_model(device, cfg):
     model = PosNetAdaptive(
+        # This is a simplified model for testing
         encode_block_channels   = [4, 8, 16, 32],
         encode_block_depth      = 2,
         decode_block_channels   = [32, 16, 8],
@@ -114,13 +111,6 @@ def make_model(device, cfg):
         decode_block_channels2  = [32, 16, 8],
         decode_block_depth2     = 2,
         attention_channels      = [32, 32, 32],
-        # encode_block_channels   = [16, 32, 64, 128],
-        # encode_block_depth      = 3,
-        # decode_block_channels   = [128, 64, 32],
-        # decode_block_depth      = 2,
-        # decode_block_channels2  = [128, 64, 32],
-        # decode_block_depth2     = 3,
-        # attention_channels      = [128, 128, 128],
         res_connections         = True,
         activation              = 'relu',
         padding_mode            = 'zeros',
@@ -141,7 +131,6 @@ def make_model(device, cfg):
 def run(rank, cfg, gen_ab=None):
     # Initialize the distributed environment. (Fixed pattern)
     os.environ['MASTER_ADDR'] = 'localhost'
-    #os.environ['MASTER_PORT'] = '12355'
     os.environ['MASTER_PORT'] = '12356'
     dist.init_process_group(cfg['comm_backend'], rank=rank, world_size=cfg['world_size'])
     cfg['rank'] = rank
@@ -296,7 +285,6 @@ def run(rank, cfg, gen_ab=None):
         test_set, test_loader = make_webDataloader(cfg, 'test')
 
     if cfg['test']:
-
         print(f'\n ========= Testing with model from epoch {checkpointer.best_epoch}')
 
         eval_losses = SyncedLoss(len(loss_logger.loss_labels))
@@ -306,9 +294,7 @@ def run(rank, cfg, gen_ab=None):
         model.eval()
         with Join([model, eval_losses]):
             with torch.no_grad():
-                
                 for ib, batch in enumerate(test_loader):
-                    
                     # Transfer batch to device
                     X, ref, _, _ = batch_to_device(batch, rank)
                     
@@ -338,14 +324,12 @@ def run(rank, cfg, gen_ab=None):
             f.write(';'.join([str(l) for l in eval_loss]))
 
     if cfg['predict'] and rank == 0:
-    
         # Make predictions
         print(f'\n ========= Predict on {cfg["pred_batches"]} batches from the test set')
         counter = 0
         pred_dir = os.path.join(cfg['run_dir'], 'predictions/')
         
         with torch.no_grad():
-            
             for ib, batch in enumerate(test_loader):
                 if ib >= cfg['pred_batches']: break
                 
@@ -380,7 +364,7 @@ if __name__ == '__main__':
     with open('./config_styleTrans.yaml', 'r') as f:
         cfg = yaml.safe_load(f)
 
-
+    # Load cycle GAN model if style_trans is True
     if cfg['style_trans'] == True:
         sys.path.append('./pytorch-CycleGAN-and-pix2pix')
         from data import create_dataset
@@ -392,7 +376,6 @@ if __name__ == '__main__':
                             have subfolders trainA, trainB, valA, valB, etc)')
         parser.add_argument('--name', type=str, default='HyperTest-resnet_6blocks-2-16-10-0.5', \
                             help='name of the experiment. It decides where to store samples and models')
-        # Debug GUP
         parser.add_argument('--gpu_ids', type=str, default='-1', help='gpu ids: e.g. 0  0,1,2, 0,2. use -1 for CPU')
         parser.add_argument('--checkpoints_dir', type=str, default='./trained_models', help='models are saved here')
         parser.add_argument('--model', type=str, default='test', help='chooses which model to use. [cycle_gan | pix2pix | test | colorization]')
@@ -407,7 +390,7 @@ if __name__ == '__main__':
         parser.add_argument('--init_type', type=str, default='normal', help='network initialization [normal | xavier | kaiming | orthogonal]')
         parser.add_argument('--init_gain', type=float, default=0.02, help='scaling factor for normal, xavier and orthogonal.')
         parser.add_argument('--no_dropout', action='store_false', help='no dropout for the generator')
-        # dataset parameters
+
         parser.add_argument('--dataset_mode', type=str, default='single', help='chooses how datasets are loaded. [unaligned | aligned | single | colorization]')
         parser.add_argument('--direction', type=str, default='AtoB', help='AtoB or BtoA')
         parser.add_argument('--serial_batches', action='store_true', help='if true, takes images in order to make batches, otherwise takes them randomly')
@@ -419,17 +402,19 @@ if __name__ == '__main__':
         parser.add_argument('--preprocess', type=str, default='resize_and_crop', help='scaling and cropping of images at load time [resize_and_crop | crop | scale_width | scale_width_and_crop | none]')
         parser.add_argument('--no_flip', action='store_true', help='if specified, do not flip the images for data augmentation')
         parser.add_argument('--display_winsize', type=int, default=256, help='display window size for both visdom and HTML')
-        # additional parameters
+
         parser.add_argument('--epoch', type=str, default='latest', help='which epoch to load? set to latest to use latest cached model')
         parser.add_argument('--load_iter', type=int, default=0, help='which iteration to load? if load_iter > 0, the code will load models by iter_[load_iter]; otherwise, the code will load models by [epoch]')
         parser.add_argument('--verbose', action='store_true', help='if specified, print more debugging information')
         parser.add_argument('--suffix', default='', type=str, help='customized suffix: opt.name = opt.name + suffix: e.g., {model}_{netG}_size{load_size}')
+
         # wandb parameters
         parser.add_argument('--use_wandb', action='store_true', help='if specified, then init wandb logging')
         parser.add_argument('--wandb_project_name', type=str, default='CycleGAN-and-pix2pix', help='specify wandb project name')
         parser.add_argument('--results_dir', type=str, default='./image_output/', help='saves results here.')
         parser.add_argument('--aspect_ratio', type=float, default=1.0, help='aspect ratio of result images')
         parser.add_argument('--phase', type=str, default='test', help='train, val, test, etc')
+
         # Dropout and Batchnorm has different behavioir during training and test.
         parser.add_argument('--eval', action='store_true', help='use eval mode during test time.')
         parser.add_argument('--num_test', type=int, default=50, help='how many test images to run')
@@ -440,9 +425,6 @@ if __name__ == '__main__':
 
         # set gpu ids
         str_ids = opt.gpu_ids.split(',')
-        # opt.gpu_ids = [0, 1, 2, 3]
-        # opt.gpu_ids = []
-
         opt.gpu_ids = []
         for str_id in str_ids:
             id = int(str_id)
