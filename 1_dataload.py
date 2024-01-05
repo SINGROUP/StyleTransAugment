@@ -58,10 +58,6 @@ def make_webDataloader(cfg, mode='train'):
     assert mode in ['train', 'val', 'test'], mode
 
     shard_list = os.path.join(cfg['data_dir'], cfg['urls'][mode])
-    #print(cfg['urls'])
-    #print('Shard_list: {}'.format(shard_list))
-    # /scratch/phys/project/sin/AFM_Hartree_DB/AFM_sims/striped/Water-Au111/Water-K-{1..10}_train_{0..5}.tar
-
     apply_preprocessing_ = partial(apply_preprocessing, cfg=cfg)
 
     dataset = wds.WebDataset(dl.ShardList(shard_list, world_size=cfg['world_size'], rank=cfg['global_rank'],
@@ -101,17 +97,6 @@ def main():
     fig, axs = plt.subplots(2, nz, sharey=True, figsize=(20, 4))
     plt.tight_layout()
     for ib, batch in enumerate(train_loader):
-        '''
-        print('---------------------------------')
-        print(batch[0][0])
-        print(batch[0][0].shape)
-        print(batch[0][0][0].shape)
-        print(batch[0][0][0][0].shape)
-        print(batch[0][0][0][0][:, :, 1].shape)
-        print(batch[1][0].shape)
-        print(batch[1][0].shape[-1]/10) # nz = 10 in this case
-        '''
-
         step = batch[1][0].shape[-1]/nz
         z_top = batch[3][1][-1]
         for s in range(nz):
@@ -127,7 +112,7 @@ def main():
             axs[1, s].set_xticks([])
             axs[1, s].set_yticks([])
         plt.savefig('temp/input_label_ib_{}.png'.format(ib))
-        # Save 5 images
+        # Save several images
         if ib == 4:
             print('Image samples saved to temp.')
             break 
