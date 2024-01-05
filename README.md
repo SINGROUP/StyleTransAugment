@@ -1,7 +1,7 @@
 # AFM-Augmentation
 Enhancing AFM Image Analysis and Prediction through Machine Learning and Data Augmentation
 
-This project relies on the [ASD-AFM-dev](https://github.com/SINGROUP/ASD-AFM-dev) data-augmentation branch. 
+This project relies on the [ASD-AFM-dev](https://github.com/SINGROUP/ASD-AFM-dev) data-augmentation branch as well as [CycleGAN](https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix) to realise the style translation. 
 
 ## Usage
 
