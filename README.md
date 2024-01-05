@@ -5,7 +5,7 @@ This project relies on the [ASD-AFM-dev](https://github.com/SINGROUP/ASD-AFM-dev
 
 ## Usage
 
-### 1. Preparations
+### 0. Preparations
 Clone this project:
 ```bash
 git clone git@github.com:HuangJiaLian/AFM-Augmentation.git
@@ -31,14 +31,14 @@ cp /etc/OpenCL/vendors/nvidia.icd $CONDA_PREFIX'/etc/OpenCL/vendors/'
 ./build.sh
 ```
 
-### 2. Dataload demostration
+### 1. Dataload demostration
 ```
 python 1_dataload.py 
 ```
 Several input-label pairs that look like the following would be stored in the folder temp. 
 ![](temp/input_label.png)
 
-### 3. Style translation 
+### 2. Style translation 
 ```
 python 2_augment.py 
 ```
@@ -47,3 +47,8 @@ Several images named like `style_translate_1.png` appears in the root directory,
 ![](temp/original_vs_generated.png)
 
 where first row of images are original PPAFM images at different heights, while the second row are the corresponding style-transfored images. 
+
+### 3. Train with simplified posnet with style-translationed image
+```
+python 3_fit_simple_posnet.py
+```
