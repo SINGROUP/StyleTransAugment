@@ -36,7 +36,7 @@ import torch.distributed as dist
 import time
 
 # Make changes in this function to style translation
-def apply_preprocessing(batch, cfg, gen_ab):
+def apply_preprocessing(batch, cfg, gen_ab=None):
     box_res = cfg['box_res']
     z_lims = cfg['z_lims']
     zmin = cfg['zmin']
@@ -45,8 +45,7 @@ def apply_preprocessing(batch, cfg, gen_ab):
     X, atoms, scan_windows = [batch[k] for k in ['X', 'xyz', 'sw']]
 
     # Pick a random number of slices between 1 and 15
-    # nz = random.choice(range(1, 16))
-    nz = 5 # Choose 5 slices for now
+    nz = random.choice(range(1, 16))
     X = [x[:, :, :, -nz:] for x in X]
 
     atoms = [a[a[:, -1] != 79] for a in atoms] # Get rid of Au substrate
@@ -60,10 +59,13 @@ def apply_preprocessing(batch, cfg, gen_ab):
         (box_res[0]*(X[0].shape[1] - 1), box_res[1]*(X[0].shape[2] - 1), z_lims[1])
     )
     pp.rand_shift_xy_trend(X, shift_step_max=0.02, max_shift_total=0.04)
-    X, mols, box_borders = gu.add_rotation_reflection_graph(X, mols, box_borders, num_rotations=1,
+    X, mols, box_borders = gu.add_rotation_reflection_graph(X, mols, box_borders, num_rotations=3,
         reflections=True, crop='max', per_batch_item=True)
-    pp.style_translate(X, gen_ab, debug=True)
+    pp.style_translate(X, gen_ab, debug=True) if cfg['style_trans'] else None
     pp.add_norm(X)
+    pp.add_gradient(X, c=0.3)
+    pp.add_noise(X, c=0.1, randomize_amplitude=True, normal_amplitude=True)
+    pp.add_cutout(X, n_holes=5)
     
     mols = gu.threshold_atoms_bonds(mols, zmin)
     ref = gu.make_position_distribution(mols, box_borders, box_res=box_res, std=peak_std)
@@ -159,27 +161,31 @@ def run(rank, cfg):
     cfg['local_rank'] = rank
     cfg['global_rank'] = rank
 
-    opt = obtain_cycleGAN_options()
-    opt.gpu_ids = [rank] # GPU
-    #opt.gpu_ids = [] # CPU
-    gen_ab = create_model(opt) # create a model given opt.model and other options
-    gen_ab.setup(opt)  # regular setup: load and print networks; create schedulers
+    # Load cycle GAN model if style_trans is True
+    if cfg['style_trans'] == True:
+        opt = obtain_cycleGAN_options()
+        opt.gpu_ids = [rank] # GPU
+        # opt.gpu_ids = [] # CPU 
+        gen_ab = create_model(opt) # create a model given opt.model and other options
+        gen_ab.setup(opt)  # regular setup: load and print networks; create schedulers
+    
+    start_time = time.perf_counter()
+    train_set, train_loader = make_webDataloader(cfg, gen_ab, 'train')
 
-    if cfg['train']:
-        train_set, train_loader = make_webDataloader(cfg, gen_ab, 'train')
-
+    # Load a batch of data
     for ib, batch in enumerate(train_loader):
         # Do nothing, but load a batch with style translation
         if ib == 0:
             break
+
+    print(f"Rank {rank} finished in {time.perf_counter() - start_time} seconds")
+    dist.barrier()
     dist.destroy_process_group()
-    torch.cuda.empty_cache()
 
 
 if __name__ == "__main__":
-
     data_dir = '/scratch/phys/project/sin/AFM_Hartree_DB/AFM_sims/striped/Water-Au111/'
-    with open('./config_1.yaml', 'r') as f:
+    with open('./config_styleTrans.yaml', 'r') as f:
         cfg = yaml.safe_load(f)
 
     # Rewrite the data_dir based on the system
@@ -188,5 +194,6 @@ if __name__ == "__main__":
     mp.set_start_method('spawn')
     world_size = torch.cuda.device_count()
     cfg['world_size'] = world_size 
+
     # Distributed Data Parallel
     mp.spawn(run, args=(cfg, ), nprocs=world_size, join=True)

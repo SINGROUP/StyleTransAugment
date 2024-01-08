@@ -69,8 +69,7 @@ def apply_preprocessing(batch, cfg, gen_ab=None):
     pp.rand_shift_xy_trend(X, shift_step_max=0.02, max_shift_total=0.04)
     X, mols, box_borders = gu.add_rotation_reflection_graph(X, mols, box_borders, num_rotations=3,
         reflections=True, crop='max', per_batch_item=True)
-    if cfg['style_trans'] == True:
-        pp.style_translate(X, gen_ab, debug=False)
+    pp.style_translate(X, gen_ab) if cfg['style_trans'] else None
     pp.add_norm(X)
     pp.add_gradient(X, c=0.3)
     pp.add_noise(X, c=0.1, randomize_amplitude=True, normal_amplitude=True)
@@ -202,7 +201,6 @@ def run(rank, cfg):
     if cfg['style_trans'] == True:
         opt = obtain_cycleGAN_options()
         opt.gpu_ids = [rank] # use local rank as the device ID
-        #opt.gpu_ids = [] # use CPU
         gen_ab = create_model(opt) # create a model given opt.model and other options
         gen_ab.setup(opt)  # regular setup: load and print networks; create schedulers
     
@@ -245,7 +243,7 @@ def run(rank, cfg):
     if cfg['train']:
         # Create datasets and dataloaders
         train_set, train_loader = make_webDataloader(cfg, 'train', gen_ab)
-        val_set, val_loader = make_webDataloader(cfg, 'val', gen_ab)
+        val_set, val_loader = make_webDataloader(cfg, 'val') # Validation set is not augmented
 
         if rank == 0:
             if init_epoch <= cfg['epochs']:
@@ -346,7 +344,7 @@ def run(rank, cfg):
     
 
     if cfg['test'] or cfg['predict']:
-        test_set, test_loader = make_webDataloader(cfg, 'test')
+        test_set, test_loader = make_webDataloader(cfg, 'test') # Test set is not augmented
 
     if cfg['test']:
         print(f'\n ========= Testing with model from epoch {checkpointer.best_epoch}')
@@ -427,7 +425,7 @@ if __name__ == '__main__':
     # Read config used for posnet
     with open('./config_styleTrans.yaml', 'r') as f:
         cfg = yaml.safe_load(f)
-
+    cfg = update_config(cfg)
     if not os.path.exists(cfg['run_dir']):
         os.makedirs(cfg['run_dir'])
     # Save config

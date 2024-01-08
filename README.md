@@ -42,7 +42,7 @@ Several input-label pairs that look like the following would be stored in the fo
 ```
 python 2_augment.py 
 ```
-Several images named like `style_translate_1.png` appears in the root directory, which look like this:
+Several images named like `Debug_translate_1.png` appears in the `temp` directory, which look like this:
 
 ![](temp/original_vs_generated.png)
 
