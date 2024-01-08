@@ -158,7 +158,8 @@ def run(rank, cfg):
     cfg['global_rank'] = rank
 
     opt = obtain_cycleGAN_options()
-    opt.gpu_ids = [rank]
+    opt.gpu_ids = [rank] # GPU
+    # opt.gpu_ids = [] # CPU
     gen_ab = create_model(opt) # create a model given opt.model and other options
     gen_ab.setup(opt)  # regular setup: load and print networks; create schedulers
 
@@ -183,8 +184,8 @@ if __name__ == "__main__":
     cfg['data_dir'] = data_dir
 
     mp.set_start_method('spawn')
-    # world_size = torch.cuda.device_count()
-    world_size = 1
+    world_size = torch.cuda.device_count()
+    # world_size = 1
     cfg['world_size'] = world_size 
     # Distributed Data Parallel
     mp.spawn(run, args=(cfg, ), nprocs=world_size, join=True)

@@ -192,7 +192,7 @@ def obtain_cycleGAN_options():
 def run(rank, cfg):
     # Initialize the distributed environment. (Fixed pattern)
     os.environ['MASTER_ADDR'] = 'localhost'
-    os.environ['MASTER_PORT'] = '12355'
+    os.environ['MASTER_PORT'] = '12357'
     dist.init_process_group(cfg['comm_backend'], rank=rank, world_size=cfg['world_size'])
     cfg['rank'] = rank
     cfg['local_rank'] = rank
@@ -202,6 +202,7 @@ def run(rank, cfg):
     if cfg['style_trans'] == True:
         opt = obtain_cycleGAN_options()
         opt.gpu_ids = [rank] # use local rank as the device ID
+        #opt.gpu_ids = [] # use CPU
         gen_ab = create_model(opt) # create a model given opt.model and other options
         gen_ab.setup(opt)  # regular setup: load and print networks; create schedulers
     
