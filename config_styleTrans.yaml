@@ -12,7 +12,7 @@ loss_labels:
 - MSE (Pos.)
 loss_weights: []
 lr: 0.001
-num_workers: 2
+num_workers: 1
 peak_std: 0.2
 pred_batches: 20
 predict: true
