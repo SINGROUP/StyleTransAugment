@@ -3,4 +3,4 @@
 	url = git@github.com:SINGROUP/ASD-AFM-dev.git
 [submodule "pytorch-CycleGAN-and-pix2pix"]
 	path = pytorch-CycleGAN-and-pix2pix
-	url = https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix.git
+	url = git@github.com:huangchieh/pytorch-CycleGAN-and-pix2pix.git 
