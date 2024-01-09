@@ -54,3 +54,4 @@ python -u 3_fit_simple_posnet.py \
     --peak_std 0.20 \
     --zmin -2.5 \
     --z_lims -2.9 0.5 \
+    --style_trans True \
