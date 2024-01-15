@@ -35,7 +35,6 @@ from asdafm.logging                 import LossLogPlot, SyncedLoss
 
 import argparse
 sys.path.append('./pytorch-CycleGAN-and-pix2pix') # Path to cycleGAN repo
-from data import create_dataset
 from models import create_model
 
 def batch_to_device(batch, device):
@@ -69,7 +68,7 @@ def apply_preprocessing(batch, cfg, gen_ab=None):
     pp.rand_shift_xy_trend(X, shift_step_max=0.02, max_shift_total=0.04)
     X, mols, box_borders = gu.add_rotation_reflection_graph(X, mols, box_borders, num_rotations=3,
         reflections=True, crop='max', per_batch_item=True)
-    pp.style_translate(X, gen_ab) if cfg['style_trans'] else None
+    pp.style_translate(X, gen_ab) if gen_ab is not None else None
     pp.add_norm(X)
     pp.add_gradient(X, c=0.3)
     pp.add_noise(X, c=0.1, randomize_amplitude=True, normal_amplitude=True)
@@ -200,57 +199,57 @@ def run(rank, cfg):
     cfg['local_rank'] = rank
     cfg['global_rank'] = rank
 
-
-    options_dict = {
-        'dataroot': 'image_input',
-        'name': 'HyperTest-resnet_6blocks-2-16-10-0.5',
-        'gpu_ids': '-1',
-        'checkpoints_dir': './trained_models',
-        'model': 'test',
-        'input_nc': 1,
-        'output_nc': 1,
-        'ngf': 16,
-        'ndf': 16,
-        'netD': 'basic',
-        'netG': 'resnet_6blocks',
-        'n_layers_D': 3,
-        'norm': 'instance',
-        'init_type': 'normal',
-        'init_gain': 0.02,
-        'no_dropout': True,
-        'dataset_mode': 'single',
-        'direction': 'AtoB',
-        'serial_batches': True,
-        'num_threads': 0,
-        'batch_size': 1,
-        'load_size': 256,
-        'crop_size': 256,
-        'max_dataset_size': float("inf"),
-        'preprocess': 'resize_and_crop',
-        'no_flip': True,
-        'display_winsize': 256,
-        'epoch': 'latest',
-        'load_iter': 0,
-        'verbose': False,
-        'suffix': '',
-        'use_wandb': False,
-        'wandb_project_name': 'CycleGAN-and-pix2pix',
-        'results_dir': './image_output/',
-        'aspect_ratio': 1.0,
-        'phase': 'test',
-        'eval': False,
-        'num_test': 50,
-        'model_suffix': '',
-        'isTrain': False, 
-        'display_id': -1
-    }
-
     # Load cycle GAN model if style_trans is True
     if cfg['style_trans'] == True:
+        options_dict = {
+            'dataroot': 'image_input',
+            'name': 'HyperTest-resnet_6blocks-2-16-10-0.5',
+            'gpu_ids': '-1',
+            'checkpoints_dir': './trained_models',
+            'model': 'test',
+            'input_nc': 1,
+            'output_nc': 1,
+            'ngf': 16,
+            'ndf': 16,
+            'netD': 'basic',
+            'netG': 'resnet_6blocks',
+            'n_layers_D': 3,
+            'norm': 'instance',
+            'init_type': 'normal',
+            'init_gain': 0.02,
+            'no_dropout': True,
+            'dataset_mode': 'single',
+            'direction': 'AtoB',
+            'serial_batches': True,
+            'num_threads': 0,
+            'batch_size': 1,
+            'load_size': 256,
+            'crop_size': 256,
+            'max_dataset_size': float("inf"),
+            'preprocess': 'resize_and_crop',
+            'no_flip': True,
+            'display_winsize': 256,
+            'epoch': 'latest',
+            'load_iter': 0,
+            'verbose': False,
+            'suffix': '',
+            'use_wandb': False,
+            'wandb_project_name': 'CycleGAN-and-pix2pix',
+            'results_dir': './image_output/',
+            'aspect_ratio': 1.0,
+            'phase': 'test',
+            'eval': False,
+            'num_test': 50,
+            'model_suffix': '',
+            'isTrain': False, 
+            'display_id': -1 }
         opt = cycleGAN_options(options_dict)
-        opt.gpu_ids = [rank] # use local rank as the device ID
+        #opt.gpu_ids = [rank] # use local rank as the device ID
+        opt.gpu_ids = [3] # use local rank as the device ID
+        # opt.gpu_ids = [] # CPU
         gen_ab = create_model(opt) # create a model given opt.model and other options
         gen_ab.setup(opt)  # regular setup: load and print networks; create schedulers
+        
     
     start_time = time.perf_counter()  
     # Create a directory called Checkpoints in the run_dir ('.')
@@ -374,14 +373,20 @@ def run(rank, cfg):
                             t0 = t2
 
             # Write average losses to log and report to terminal
+            if rank == 0: print('Debug: bbefore')
             loss_logger.next_epoch()
 
+            if rank == 0: print('Debug: bbefore')
             # Save checkpoint
             if rank == 0: checkpointer.next_epoch(loss_logger.val_losses[-1][0])
 
     # Return to best epoch, and save model weights
+    if rank == 0:
+        print('Debug: before')
     dist.barrier()
     checkpointer.revert_to_best_epoch()
+    if rank == 0:
+        print('Debug: after')
     if rank == 0:
         torch.save(model.module.state_dict(), save_path := os.path.join(cfg['run_dir'], 'best_model.pth'))
         print(f'\nModel saved to {save_path}')

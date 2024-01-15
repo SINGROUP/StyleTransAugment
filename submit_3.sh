@@ -8,7 +8,7 @@
 
 # Load environment
 module load anaconda
-source activate ml_pt110
+source activate ml
 export OMP_NUM_THREADS=1
 
 # Print job info

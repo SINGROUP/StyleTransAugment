@@ -23,9 +23,9 @@ test: true
 timings: true
 train: true
 urls:
-  test: Water-K-{1..10}_test_{0..7}.tar
-  train: Water-K-{1..10}_train_{0..31}.tar
-  val: Water-K-{1..10}_val_{0..7}.tar
+  test: Water-K-{1..1}_test_{0..0}.tar
+  train: Water-K-{1..1}_train_{0..0}.tar
+  val: Water-K-{1..1}_val_{0..0}.tar
 z_lims:
 - -2.9
 - 0.5

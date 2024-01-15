@@ -61,7 +61,7 @@ def apply_preprocessing(batch, cfg, gen_ab=None):
     pp.rand_shift_xy_trend(X, shift_step_max=0.02, max_shift_total=0.04)
     X, mols, box_borders = gu.add_rotation_reflection_graph(X, mols, box_borders, num_rotations=3,
         reflections=True, crop='max', per_batch_item=True)
-    pp.style_translate(X, gen_ab, debug=True) if cfg['style_trans'] else None
+    pp.style_translate(X, gen_ab, debug=True) if gen_ab is not None else None
     pp.add_norm(X)
     pp.add_gradient(X, c=0.3)
     pp.add_noise(X, c=0.1, randomize_amplitude=True, normal_amplitude=True)
@@ -211,7 +211,8 @@ def run(rank, cfg):
                 'display_id': -1
             }
             opt = cycleGAN_options(options_dict)
-            opt.gpu_ids = [rank] # GPU
+            #opt.gpu_ids = [rank] # GPU
+            opt.gpu_ids = [] # CPU
             gen_ab = create_model(opt) # create a model given opt.model and other options
             gen_ab.setup(opt)  # regular setup: load and print networks; create schedulers
     
