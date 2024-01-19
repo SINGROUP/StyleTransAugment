@@ -7,6 +7,7 @@ This project relies on the [ASD-AFM-dev](https://github.com/SINGROUP/ASD-AFM-dev
 
 ### 0. Preparations
 Clone this project:
+
 ```bash
 git clone --recurse-submodules git@github.com:SINGROUP/StyleTranslationAugmentation.git
 ```
