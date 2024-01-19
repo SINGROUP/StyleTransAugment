@@ -81,7 +81,7 @@ def make_webDataloader(cfg, mode='train'):
 def main():
     print('Dataloading demostration start...')
     data_dir = '/scratch/phys/project/sin/AFM_Hartree_DB/AFM_sims/striped/Water-Au111/'
-    with open('./config_1.yaml', 'r') as f:
+    with open('./config_styleTrans.yaml', 'r') as f:
         cfg = yaml.safe_load(f)
 
     # Rewrite the data_dir based on the system
