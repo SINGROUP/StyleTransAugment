@@ -36,12 +36,20 @@ from asdafm.logging                 import LossLogPlot, SyncedLoss
 import argparse
 sys.path.append('./pytorch-CycleGAN-and-pix2pix') # Path to cycleGAN repo
 from models import create_model
+from torch.distributed import broadcast
 
 def batch_to_device(batch, device):
     X, ref, *rest = batch
     X = X[0].to(device)
     ref = ref[0].to(device)
     return X, ref, *rest
+
+def batch_to_host(batch):
+    X, ref, pred, xyz = batch
+    X = X.squeeze(1).cpu()
+    ref = ref.cpu()
+    pred = pred.cpu()
+    return X, ref, pred, xyz
 
 def apply_preprocessing(batch, cfg, gen_ab=None):
     box_res = cfg['box_res']
@@ -68,7 +76,7 @@ def apply_preprocessing(batch, cfg, gen_ab=None):
     pp.rand_shift_xy_trend(X, shift_step_max=0.02, max_shift_total=0.04)
     X, mols, box_borders = gu.add_rotation_reflection_graph(X, mols, box_borders, num_rotations=3,
         reflections=True, crop='max', per_batch_item=True)
-    pp.style_translate(X, gen_ab) if gen_ab is not None else None
+    pp.style_translate(X, gen_ab, cfg['rank']) if gen_ab is not None else None
     pp.add_norm(X)
     pp.add_gradient(X, c=0.3)
     pp.add_noise(X, c=0.1, randomize_amplitude=True, normal_amplitude=True)
@@ -190,8 +198,8 @@ def cycleGAN_options(options_dict):
     return opt
 
 
-def run(rank, cfg):
-    # Initialize the distributed environment. (Fixed pattern)
+def run(rank, cfg, gen_ab):
+    # Initialize the distributed environment. 
     os.environ['MASTER_ADDR'] = 'localhost'
     os.environ['MASTER_PORT'] = '12357'
     dist.init_process_group(cfg['comm_backend'], rank=rank, world_size=cfg['world_size'])
@@ -199,56 +207,6 @@ def run(rank, cfg):
     cfg['local_rank'] = rank
     cfg['global_rank'] = rank
 
-    # Load cycle GAN model if style_trans is True
-    if cfg['style_trans'] == True:
-        options_dict = {
-            'dataroot': 'image_input',
-            'name': 'HyperTest-resnet_6blocks-2-16-10-0.5',
-            'gpu_ids': '-1',
-            'checkpoints_dir': './trained_models',
-            'model': 'test',
-            'input_nc': 1,
-            'output_nc': 1,
-            'ngf': 16,
-            'ndf': 16,
-            'netD': 'basic',
-            'netG': 'resnet_6blocks',
-            'n_layers_D': 3,
-            'norm': 'instance',
-            'init_type': 'normal',
-            'init_gain': 0.02,
-            'no_dropout': True,
-            'dataset_mode': 'single',
-            'direction': 'AtoB',
-            'serial_batches': True,
-            'num_threads': 0,
-            'batch_size': 1,
-            'load_size': 256,
-            'crop_size': 256,
-            'max_dataset_size': float("inf"),
-            'preprocess': 'resize_and_crop',
-            'no_flip': True,
-            'display_winsize': 256,
-            'epoch': 'latest',
-            'load_iter': 0,
-            'verbose': False,
-            'suffix': '',
-            'use_wandb': False,
-            'wandb_project_name': 'CycleGAN-and-pix2pix',
-            'results_dir': './image_output/',
-            'aspect_ratio': 1.0,
-            'phase': 'test',
-            'eval': False,
-            'num_test': 50,
-            'model_suffix': '',
-            'isTrain': False, 
-            'display_id': -1 }
-        opt = cycleGAN_options(options_dict)
-        #opt.gpu_ids = [rank] # use local rank as the device ID
-        opt.gpu_ids = [3] # use local rank as the device ID
-        # opt.gpu_ids = [] # CPU
-        gen_ab = create_model(opt) # create a model given opt.model and other options
-        gen_ab.setup(opt)  # regular setup: load and print networks; create schedulers
         
     
     start_time = time.perf_counter()  
@@ -312,10 +270,10 @@ def run(rank, cfg):
             # Go
             with Join([model, loss_logger.get_joinable('train')]):
                 for ib, batch in enumerate(train_loader):
-
+                    print('Processing {}-th batch on rank {}...'.format(ib, rank))
                     # Transfer batch to device
                     X, ref, _, _ = batch_to_device(batch, rank)
-
+                    #print(f"Batch size on GPU {rank}: {X.size(0)}")
                     if cfg['timings'] and rank == 0:
                         torch.cuda.synchronize()
                         t1 = time.perf_counter()
@@ -336,12 +294,14 @@ def run(rank, cfg):
 
                     # Log losses
                     loss_logger.add_train_loss(loss)
-
+                    
                     if cfg['timings'] and rank == 0:
                         torch.cuda.synchronize()
                         t3 = time.perf_counter()
                         print(f'(Train) Load Batch/Forward/Backward: {t1-t0:6f}/{t2-t1:6f}/{t3-t2:6f}')
                         t0 = t3
+
+
             # Validate
             if rank == 0:
                 val_start = time.perf_counter()
@@ -355,7 +315,7 @@ def run(rank, cfg):
                         
                         # Transfer batch to device
                         X, ref, _, _ = batch_to_device(batch, rank)
-                        
+                        print(f"Batch size on GPU {rank}: {X.size(0)}")
                         if cfg['timings']: 
                             torch.cuda.synchronize()
                             t1 = time.perf_counter()
@@ -373,20 +333,15 @@ def run(rank, cfg):
                             t0 = t2
 
             # Write average losses to log and report to terminal
-            if rank == 0: print('Debug: bbefore')
             loss_logger.next_epoch()
-
-            if rank == 0: print('Debug: bbefore')
             # Save checkpoint
-            if rank == 0: checkpointer.next_epoch(loss_logger.val_losses[-1][0])
+            checkpointer.next_epoch(loss_logger.val_losses[-1][0])
+            #if rank == 0: checkpointer.next_epoch(loss_logger.val_losses[-1][0])
+            print('Hello from rank ', rank)
 
     # Return to best epoch, and save model weights
-    if rank == 0:
-        print('Debug: before')
     dist.barrier()
     checkpointer.revert_to_best_epoch()
-    if rank == 0:
-        print('Debug: after')
     if rank == 0:
         torch.save(model.module.state_dict(), save_path := os.path.join(cfg['run_dir'], 'best_model.pth'))
         print(f'\nModel saved to {save_path}')
@@ -495,6 +450,58 @@ if __name__ == '__main__':
     world_size = torch.cuda.device_count()
     cfg['world_size'] = world_size 
 
+
+    # Load cycle GAN model if style_trans is True
+    gen_ab = None
+    if cfg['style_trans'] == True:
+        options_dict = {
+            'dataroot': 'image_input',
+            'name': 'HyperTest-resnet_6blocks-2-16-10-0.5',
+            'gpu_ids': '-1',
+            'checkpoints_dir': './trained_models',
+            'model': 'test',
+            'input_nc': 1,
+            'output_nc': 1,
+            'ngf': 16,
+            'ndf': 16,
+            'netD': 'basic',
+            'netG': 'resnet_6blocks',
+            'n_layers_D': 3,
+            'norm': 'instance',
+            'init_type': 'normal',
+            'init_gain': 0.02,
+            'no_dropout': True,
+            'dataset_mode': 'single',
+            'direction': 'AtoB',
+            'serial_batches': True,
+            'num_threads': 0,
+            'batch_size': 1,
+            'load_size': 256,
+            'crop_size': 256,
+            'max_dataset_size': float("inf"),
+            'preprocess': 'resize_and_crop',
+            'no_flip': True,
+            'display_winsize': 256,
+            'epoch': 'latest',
+            'load_iter': 0,
+            'verbose': False,
+            'suffix': '',
+            'use_wandb': False,
+            'wandb_project_name': 'CycleGAN-and-pix2pix',
+            'results_dir': './image_output/',
+            'aspect_ratio': 1.0,
+            'phase': 'test',
+            'eval': False,
+            'num_test': 50,
+            'model_suffix': '',
+            'isTrain': False, 
+            'display_id': -1 }
+    opt = cycleGAN_options(options_dict)
+    opt.gpu_ids = [] 
+    gen_ab = create_model(opt) # create a model given opt.model and other options
+    gen_ab.setup(opt)  # regular setup: load and print networks; create schedulers
+    gen_ab = gen_ab.netG 
+
     # Distributed Data Parallel
-    mp.spawn(run, args=(cfg, ), nprocs=world_size, join=True)
+    mp.spawn(run, args=(cfg, gen_ab), nprocs=world_size, join=True)
 

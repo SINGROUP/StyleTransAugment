@@ -7,7 +7,7 @@ box_res:
 - 0.1
 comm_backend: nccl
 data_dir: /scratch/phys/project/sin/AFM_Hartree_DB/AFM_sims/striped/Water-Au111/
-epochs: 1000
+epochs: 14
 loss_labels:
 - MSE (Pos.)
 loss_weights: []

@@ -10,7 +10,6 @@ sys.path.append( './ASD-AFM-dev')
 import asdafm.data_loading          as dl
 import asdafm.preprocessing         as pp
 import asdafm.graph.graph_utils     as gu
-
 from pathlib import Path
 import webdataset as wds
 
@@ -18,24 +17,33 @@ from functools import partial
 import random
 import matplotlib.pyplot as plt
 import yaml
-
+import time
 import numpy as np
 
 # CycleGAN model
 sys.path.append('./pytorch-CycleGAN-and-pix2pix')
 from options.test_options import TestOptions
 from data import create_dataset
-from models import create_model
+from models import create_model, find_model_using_name
+from models.base_model import BaseModel
 from util.visualizer import save_images
-
+import importlib
 import torch
 import argparse
 import torch.multiprocessing as mp
 import torch.distributed as dist
+from torch.nn.parallel import DistributedDataParallel
+from torch.utils.data.distributed import DistributedSampler
+from torch.distributed.algorithms.join import Join
 
-import time
 
-# Make changes in this function to style translation
+def batch_to_device(batch, device):
+    X, ref, *rest = batch
+    X = X[0].to(device)
+    ref = ref[0].to(device)
+    return X, ref, *rest
+
+
 def apply_preprocessing(batch, cfg, gen_ab=None):
     box_res = cfg['box_res']
     z_lims = cfg['z_lims']
@@ -61,7 +69,9 @@ def apply_preprocessing(batch, cfg, gen_ab=None):
     pp.rand_shift_xy_trend(X, shift_step_max=0.02, max_shift_total=0.04)
     X, mols, box_borders = gu.add_rotation_reflection_graph(X, mols, box_borders, num_rotations=3,
         reflections=True, crop='max', per_batch_item=True)
-    pp.style_translate(X, gen_ab, debug=True) if gen_ab is not None else None
+    # Do style translation gen_ab is given, debug is True when you 
+    # Want to compare the images before and after style translation
+    pp.style_translate(X, gen_ab, rank = cfg['rank'], debug=True) if gen_ab is not None else None
     pp.add_norm(X)
     pp.add_gradient(X, c=0.3)
     pp.add_noise(X, c=0.1, randomize_amplitude=True, normal_amplitude=True)
@@ -95,7 +105,6 @@ def make_webDataloader(cfg, gen_ab, mode='train'):
 
 
 def cycleGAN_options(options_dict):
-
     default_values_dict = {
         'dataroot': 'image_input',
         'name': 'HyperTest-resnet_6blocks-2-16-10-0.5',
@@ -154,10 +163,58 @@ def cycleGAN_options(options_dict):
     return opt
 
 
-def run(rank, cfg):
+def load_generator():
+    options_dict = {'dataroot': 'image_input',
+                    'name': 'HyperTest-resnet_6blocks-2-16-10-0.5',
+                    'gpu_ids': '-1',
+                    'checkpoints_dir': './trained_models',
+                    'model': 'test',
+                    'input_nc': 1,
+                    'output_nc': 1,
+                    'ngf': 16,
+                    'ndf': 16,
+                    'netD': 'basic',
+                    'netG': 'resnet_6blocks',
+                    'n_layers_D': 3,
+                    'norm': 'instance',
+                    'init_type': 'normal',
+                    'init_gain': 0.02,
+                    'no_dropout': True,
+                    'dataset_mode': 'single',
+                    'direction': 'AtoB',
+                    'serial_batches': True,
+                    'num_threads': 0,
+                    'batch_size': 1,
+                    'load_size': 256,
+                    'crop_size': 256,
+                    'max_dataset_size': float("inf"),
+                    'preprocess': 'resize_and_crop',
+                    'no_flip': True,
+                    'display_winsize': 256,
+                    'epoch': 'latest',
+                    'load_iter': 0,
+                    'verbose': False,
+                    'suffix': '',
+                    'use_wandb': False,
+                    'wandb_project_name': 'CycleGAN-and-pix2pix',
+                    'results_dir': './image_output/',
+                    'aspect_ratio': 1.0,
+                    'phase': 'test',
+                    'eval': False,
+                    'num_test': 50,
+                    'model_suffix': '',
+                    'isTrain': False, 
+                    'display_id': -1}
+    opt = cycleGAN_options(options_dict)
+    opt.gpu_ids = [] # Here gpu ids is set to empty since it would be assigned later
+    gen_ab = create_model(opt) # create a model given opt.model and other options
+    gen_ab.setup(opt)  # regular setup: load and print networks; create schedulers
+    return gen_ab.netG
+
+def run(rank, cfg, gen_ab):
     # Initialize the distributed environment
     os.environ['MASTER_ADDR'] = 'localhost'
-    os.environ['MASTER_PORT'] = '12355'
+    os.environ['MASTER_PORT'] = '12357'
     dist.init_process_group(cfg['comm_backend'], rank=rank, world_size=cfg['world_size'])
     torch.cuda.set_device(rank)
 
@@ -165,68 +222,19 @@ def run(rank, cfg):
     cfg['local_rank'] = rank
     cfg['global_rank'] = rank
 
-    # Load cycle GAN model if style_trans is True
-    if cfg['style_trans'] == True:
-            options_dict = {
-                'dataroot': 'image_input',
-                'name': 'HyperTest-resnet_6blocks-2-16-10-0.5',
-                'gpu_ids': '-1',
-                'checkpoints_dir': './trained_models',
-                'model': 'test',
-                'input_nc': 1,
-                'output_nc': 1,
-                'ngf': 16,
-                'ndf': 16,
-                'netD': 'basic',
-                'netG': 'resnet_6blocks',
-                'n_layers_D': 3,
-                'norm': 'instance',
-                'init_type': 'normal',
-                'init_gain': 0.02,
-                'no_dropout': True,
-                'dataset_mode': 'single',
-                'direction': 'AtoB',
-                'serial_batches': True,
-                'num_threads': 0,
-                'batch_size': 1,
-                'load_size': 256,
-                'crop_size': 256,
-                'max_dataset_size': float("inf"),
-                'preprocess': 'resize_and_crop',
-                'no_flip': True,
-                'display_winsize': 256,
-                'epoch': 'latest',
-                'load_iter': 0,
-                'verbose': False,
-                'suffix': '',
-                'use_wandb': False,
-                'wandb_project_name': 'CycleGAN-and-pix2pix',
-                'results_dir': './image_output/',
-                'aspect_ratio': 1.0,
-                'phase': 'test',
-                'eval': False,
-                'num_test': 50,
-                'model_suffix': '',
-                'isTrain': False, 
-                'display_id': -1
-            }
-            opt = cycleGAN_options(options_dict)
-            #opt.gpu_ids = [rank] # GPU
-            opt.gpu_ids = [] # CPU
-            gen_ab = create_model(opt) # create a model given opt.model and other options
-            gen_ab.setup(opt)  # regular setup: load and print networks; create schedulers
-    
     start_time = time.perf_counter()
     train_set, train_loader = make_webDataloader(cfg, gen_ab, 'train')
-
-    # Load a batch of data
-    for ib, batch in enumerate(train_loader):
-        # Do nothing, but load a batch with style translation
-        if ib == 0:
-            break
-
+    for epoch in range(0, 1):
+        if rank == 0: print(f'\n === Epoch {epoch}')
+        for ib, batch in enumerate(train_loader):
+            # Do nothing, but load a batch with style translation
+            print('Processing {}-th batch on rank {}...'.format(ib, rank))
+            # Break early to avoid lots of numerous when in debug mode
+            if ib == 1:
+                break
+    
     print(f"Rank {rank} finished in {time.perf_counter() - start_time} seconds")
-    dist.barrier()
+    dist.barrier()  
     dist.destroy_process_group()
 
 
@@ -237,10 +245,12 @@ if __name__ == "__main__":
 
     # Rewrite the data_dir based on the system
     cfg['data_dir'] = data_dir
-
     mp.set_start_method('spawn')
     world_size = torch.cuda.device_count()
     cfg['world_size'] = world_size 
 
+    # Load trained generator
+    gen_ab = load_generator()
+
     # Distributed Data Parallel
-    mp.spawn(run, args=(cfg, ), nprocs=world_size, join=True)
+    mp.spawn(run, args=(cfg, gen_ab), nprocs=world_size, join=True)
