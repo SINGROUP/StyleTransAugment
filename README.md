@@ -36,20 +36,20 @@ cp /etc/OpenCL/vendors/nvidia.icd $CONDA_PREFIX'/etc/OpenCL/vendors/'
 ```
 python 1_dataload.py 
 ```
-Several input-label pairs that look like the following would be stored in the folder temp. 
+Several input-label pairs that look like the following would be stored in the folder `temp`. 
 ![](temp/input_label.png)
 
 ### 2. Style translation 
 ```
 python 2_augment.py 
 ```
-Several images named like `Debug_translate_1.png` appears in the `temp` directory, which look like this:
+Several images named  with `Debug_xxxxx.png` would appear in the folder `temp`, which look like this:
 
 ![](temp/original_vs_generated.png)
 
 where first row of images are original PPAFM images at different heights, while the second row are the corresponding style-transfored images. 
 
-### 3. Train with simplified posnet with style-translationed image
+### 3. Train with simplified posnet with style-translated image
 ```
-python 3_fit_simple_posnet.py
+python 3_fit_simplified_posnet.py
 ```

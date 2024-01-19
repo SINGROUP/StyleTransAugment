@@ -37,7 +37,7 @@ echo "GPUs: $SLURM_JOB_GPUS, num_workers: $num_workers"
 
 # Run fit script
 rm -r ~/.cache # Sometimes it gets stuck if there are existing builds of cuda extensions
-python -u 3_fit_simple_posnet.py \
+python -u 3_fit_simplified_posnet.py \
     --train True \
     --test True \
     --predict True \
