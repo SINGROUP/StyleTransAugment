@@ -7,6 +7,8 @@ box_res:
 - 0.1
 comm_backend: nccl
 data_dir: /scratch/phys/project/sin/AFM_Hartree_DB/AFM_sims/striped/Water-Au111/
+checkpoint_dir: ./Checkpoints/
+prediction_dir: ./Predictions/
 epochs: 14
 loss_labels:
 - MSE (Pos.)
@@ -15,7 +17,7 @@ lr: 0.001
 num_workers: 1
 peak_std: 0.2
 pred_batches: 20
-predict: true
+predict: false
 print_interval: 10
 random_seed: 0
 run_dir: ./

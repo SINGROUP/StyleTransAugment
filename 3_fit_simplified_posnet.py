@@ -76,6 +76,7 @@ def apply_preprocessing(batch, cfg, gen_ab=None):
     pp.rand_shift_xy_trend(X, shift_step_max=0.02, max_shift_total=0.04)
     X, mols, box_borders = gu.add_rotation_reflection_graph(X, mols, box_borders, num_rotations=3,
         reflections=True, crop='max', per_batch_item=True)
+    # Do style transfer if gen_ab is not None
     pp.style_translate(X, gen_ab, cfg['rank']) if gen_ab is not None else None
     pp.add_norm(X)
     pp.add_gradient(X, c=0.3)
@@ -89,7 +90,6 @@ def apply_preprocessing(batch, cfg, gen_ab=None):
 
 
 def make_webDataloader(cfg, mode='train', gen_ab=None):
-    
     assert mode in ['train', 'val', 'test'], mode
     shard_list = os.path.join(cfg['data_dir'], cfg['urls'][mode])
     apply_preprocessing_ = partial(apply_preprocessing, cfg=cfg, gen_ab=gen_ab)
@@ -139,7 +139,6 @@ def make_model(device, cfg):
 
 
 def cycleGAN_options(options_dict):
-
     default_values_dict = {
         'dataroot': 'image_input',
         'name': 'HyperTest-resnet_6blocks-2-16-10-0.5',
@@ -207,11 +206,9 @@ def run(rank, cfg, gen_ab):
     cfg['local_rank'] = rank
     cfg['global_rank'] = rank
 
-        
-    
     start_time = time.perf_counter()  
     # Create a directory called Checkpoints in the run_dir ('.')
-    checkpoint_dir = os.path.join(cfg['run_dir'], 'Checkpoints/')
+    checkpoint_dir = os.path.join(cfg['run_dir'], cfg['checkpoint_dir'])
     if rank == 0:
         if not os.path.exists(cfg['run_dir']):
             os.makedirs(cfg['run_dir'])
@@ -261,16 +258,13 @@ def run(rank, cfg, gen_ab):
             
             # Train
             if cfg['timings'] and rank == 0: t0 = time.perf_counter() # Start timer
-
-            # Ready
             model.train() # model.train() tells your model that you 
                           # are training the model. This helps inform 
                           # layers such as Dropout and BatchNorm, which 
                           # are designed to behave differently during training and evaluation. 
-            # Go
             with Join([model, loss_logger.get_joinable('train')]):
                 for ib, batch in enumerate(train_loader):
-                    print('Processing {}-th batch on rank {}...'.format(ib, rank))
+                    # print('Processing {}-th batch on rank {}...'.format(ib, rank))
                     # Transfer batch to device
                     X, ref, _, _ = batch_to_device(batch, rank)
                     #print(f"Batch size on GPU {rank}: {X.size(0)}")
@@ -301,12 +295,10 @@ def run(rank, cfg, gen_ab):
                         print(f'(Train) Load Batch/Forward/Backward: {t1-t0:6f}/{t2-t1:6f}/{t3-t2:6f}')
                         t0 = t3
 
-
             # Validate
             if rank == 0:
                 val_start = time.perf_counter()
                 if cfg['timings']: t0 = val_start
-
             model.eval()
             with Join([loss_logger.get_joinable('val')]):
                 with torch.no_grad():
@@ -315,7 +307,6 @@ def run(rank, cfg, gen_ab):
                         
                         # Transfer batch to device
                         X, ref, _, _ = batch_to_device(batch, rank)
-                        print(f"Batch size on GPU {rank}: {X.size(0)}")
                         if cfg['timings']: 
                             torch.cuda.synchronize()
                             t1 = time.perf_counter()
@@ -337,7 +328,6 @@ def run(rank, cfg, gen_ab):
             # Save checkpoint
             checkpointer.next_epoch(loss_logger.val_losses[-1][0])
             #if rank == 0: checkpointer.next_epoch(loss_logger.val_losses[-1][0])
-            print('Hello from rank ', rank)
 
     # Return to best epoch, and save model weights
     dist.barrier()
@@ -397,7 +387,7 @@ def run(rank, cfg, gen_ab):
         # Make predictions
         print(f'\n ========= Predict on {cfg["pred_batches"]} batches from the test set')
         counter = 0
-        pred_dir = os.path.join(cfg['run_dir'], 'predictions/')
+        pred_dir = os.path.join(cfg['run_dir'], cfg['prediction_dir'])
         
         with torch.no_grad():
             for ib, batch in enumerate(test_loader):
@@ -422,11 +412,10 @@ def run(rank, cfg, gen_ab):
                 vis.make_input_plots([X], outdir=pred_dir, start_ind=counter)
 
                 counter += len(xyz)
-    # Time interval
+
     print(f'Done at rank {rank}. Total time: {time.perf_counter() - start_time:.0f}s')
 
     dist.barrier()
-    # DDP trianing step
     dist.destroy_process_group()
 
 if __name__ == '__main__':
@@ -450,10 +439,10 @@ if __name__ == '__main__':
     world_size = torch.cuda.device_count()
     cfg['world_size'] = world_size 
 
-
     # Load cycle GAN model if style_trans is True
     gen_ab = None
     if cfg['style_trans'] == True:
+        print('Style transfer is enabled. Loading cycleGAN model...')
         options_dict = {
             'dataroot': 'image_input',
             'name': 'HyperTest-resnet_6blocks-2-16-10-0.5',
@@ -496,11 +485,11 @@ if __name__ == '__main__':
             'model_suffix': '',
             'isTrain': False, 
             'display_id': -1 }
-    opt = cycleGAN_options(options_dict)
-    opt.gpu_ids = [] 
-    gen_ab = create_model(opt) # create a model given opt.model and other options
-    gen_ab.setup(opt)  # regular setup: load and print networks; create schedulers
-    gen_ab = gen_ab.netG 
+        opt = cycleGAN_options(options_dict)
+        opt.gpu_ids = [] 
+        gen_ab = create_model(opt) # create a model given opt.model and other options
+        gen_ab.setup(opt)  # regular setup: load and print networks; create schedulers
+        gen_ab = gen_ab.netG 
 
     # Distributed Data Parallel
     mp.spawn(run, args=(cfg, gen_ab), nprocs=world_size, join=True)

@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --gres=gpu:4        # Request GPUs
 #SBATCH --time=04-00:00:00  # Job time allocation
-#SBATCH --mem=80G          # Memory
+#SBATCH --mem=40G          # Memory
 #SBATCH -c 16               # Number of cores
 #SBATCH -J posnet_au111     # Job name
 #SBATCH -o log_fit.out      # Output file
@@ -41,6 +41,7 @@ python -u 3_fit_simplified_posnet.py \
     --train True \
     --test True \
     --predict True \
+    --prediction_dir Predictions_StyleTransOff \
     --epochs 1000 \
     --num_workers $num_workers \
     --batch_size 4 \
@@ -48,10 +49,11 @@ python -u 3_fit_simplified_posnet.py \
     --avg_best_epochs 10 \
     --pred_batches 20 \
     --data_dir /scratch/phys/project/sin/AFM_Hartree_DB/AFM_sims/striped/Water-Au111/ \
+    --checkpoint_dir Checkpoints_StyleTransOff \
     --urls/train "Water-K-{1..10}_train_{0..31}.tar" \
     --urls/val "Water-K-{1..10}_val_{0..7}.tar" \
     --urls/test "Water-K-{1..10}_test_{0..7}.tar" \
     --peak_std 0.20 \
     --zmin -2.5 \
     --z_lims -2.9 0.5 \
-    --style_trans True \
+    --style_trans False \
