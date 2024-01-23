@@ -208,7 +208,7 @@ def run(rank, cfg, gen_ab):
 
     start_time = time.perf_counter()  
     # Create a directory called Checkpoints in the run_dir ('.')
-    checkpoint_dir = os.path.join(cfg['run_dir'], cfg['checkpoint_dir'])
+    checkpoint_dir = os.path.join(cfg['run_dir'], 'Checkpoints/')
     if rank == 0:
         if not os.path.exists(cfg['run_dir']):
             os.makedirs(cfg['run_dir'])
@@ -387,7 +387,7 @@ def run(rank, cfg, gen_ab):
         # Make predictions
         print(f'\n ========= Predict on {cfg["pred_batches"]} batches from the test set')
         counter = 0
-        pred_dir = os.path.join(cfg['run_dir'], cfg['prediction_dir'])
+        pred_dir = os.path.join(cfg['run_dir'], 'predictions/')
         
         with torch.no_grad():
             for ib, batch in enumerate(test_loader):
