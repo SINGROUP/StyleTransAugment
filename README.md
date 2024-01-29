@@ -9,7 +9,7 @@ This project relies on the [ASD-AFM-dev](https://github.com/SINGROUP/ASD-AFM-dev
 Clone this project:
 
 ```bash
-git clone --recurse-submodules git@github.com:SINGROUP/StyleTranslationAugmentation.git
+git clone --recurse-submodules git@github.com:SINGROUP/StyleTransAugment.git
 ```
 
 Create and activate a conda environment:
