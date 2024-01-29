@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --gres=gpu:4        # Request GPUs
-#SBATCH --time=04-00:00:00  # Job time allocation
+#SBATCH --time=02-00:00:00  # Job time allocation
 #SBATCH --mem=40G          # Memory
 #SBATCH -c 16               # Number of cores
 #SBATCH -J posnet_au111_aug     # Job name
@@ -8,7 +8,7 @@
 
 # Load environment
 module load anaconda
-source activate ml
+# source activate ml
 export OMP_NUM_THREADS=1
 
 # Print job info
