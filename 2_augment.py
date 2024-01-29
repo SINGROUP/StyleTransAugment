@@ -222,6 +222,14 @@ def run(rank, cfg, gen_ab):
     cfg['local_rank'] = rank
     cfg['global_rank'] = rank
 
+    # Create a directory called Checkpoints in the run_dir ('.')
+    checkpoint_dir = os.path.join(cfg['run_dir'], 'Checkpoints/')
+    if rank == 0:
+        if not os.path.exists(cfg['run_dir']):
+            os.makedirs(cfg['run_dir'])
+        if not os.path.exists(checkpoint_dir):
+            os.makedirs(checkpoint_dir)
+
     start_time = time.perf_counter()
     train_set, train_loader = make_webDataloader(cfg, gen_ab, 'train')
     for epoch in range(0, 1):
