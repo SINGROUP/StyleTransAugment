@@ -200,7 +200,7 @@ def cycleGAN_options(options_dict):
 def run(rank, cfg, gen_ab):
     # Initialize the distributed environment. 
     os.environ['MASTER_ADDR'] = 'localhost'
-    os.environ['MASTER_PORT'] = '12357'
+    os.environ['MASTER_PORT'] = '{}'.format(random.randint(10000, 20000)
     dist.init_process_group(cfg['comm_backend'], rank=rank, world_size=cfg['world_size'])
     cfg['rank'] = rank
     cfg['local_rank'] = rank
