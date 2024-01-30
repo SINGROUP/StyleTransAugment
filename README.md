@@ -53,3 +53,10 @@ where first row of images are original PPAFM images at different heights, while 
 ```
 python 3_fit_simplified_posnet.py
 ```
+Training without style translation. 
+
+<img src='temp/loss_history_trans0.png' width='30%'/>
+
+Training with style translation. 
+
+<img src='temp/loss_history_trans100.png' width='30%'/>
