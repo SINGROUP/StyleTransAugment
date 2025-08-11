@@ -1,0 +1,3 @@
+[submodule "StyleTrans"]
+	path = StyleTrans
+	url = git@github.com:huangchieh/StyleTrans.git
