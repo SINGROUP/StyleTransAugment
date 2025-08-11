@@ -1,62 +1,13 @@
 # AFM-Augmentation
-Enhancing AFM Image Analysis and Prediction through Machine Learning and Data Augmentation
 
-This project relies on the [ASD-AFM-dev](https://github.com/SINGROUP/ASD-AFM-dev) data-augmentation branch as well as [CycleGAN](https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix) to realise the style translation. 
+## Abstract
 
-## Usage
+Atomic force microscopy (AFM) is a key tool for characterising nanoscale structures, with functionalised tips now offering detailed images of the atomic structure. In parallel, AFM simulations using the particle probe model provide a cost-effective approach for rapid AFM image generation. Using state-of-the-art machine learning models and substantial simulated datasets, properties such as molecular structure, electrostatic potential, and molecular graph can be predicted from AFM images. However, transferring model performance from simulated to experimental AFM images poses challenges due to the subtle variations in real experimental data compared to the seemingly flawless simulations. In this study, we explore style translation to augment simulated images and improve the predictive performance of machine learning models in surface property analysis. We reduce the style gap between simulated and experimental AFM images and demonstrate the method's effectiveness in enhancing structure discovery models through local structural property distribution comparisons. This research presents a novel approach to improving the efficiency of machine learning models in the absence of labelled experimental data.
 
-### 0. Preparations
-Clone this project:
+## Structure
 
-```bash
-git clone --recurse-submodules git@github.com:SINGROUP/StyleTransAugment.git
-```
+1. styleTranslation: Using CycleGAN framework for training the style translation model to obtain the style translation models.
+2. preEvaluation: Data-driven approach to evaluate the performance of style translation.
+3. structureDiscovery: Training the structure discovery model to predict the atomic structures from AFM images.
+4. performanceEvaluation: Performance evaluations of the structure models on the experimental AFM images based on the local structual properties.
 
-Create and activate a conda environment:
-```bash
-# Conda environment installation
-cd ASD-AFM-dev/
-conda env create -f environment.yml
-conda activate ml
-git checkout data-augmentation
-```
-
-Change to a GPU node (My case)
-```bash
-srun -p gpushort --gres=gpu:4 --constraint=pascal  --time=4:00:00 --mem=6000M --pty bash
-```
-
-Compile extensions by running 
-```
-cp /etc/OpenCL/vendors/nvidia.icd $CONDA_PREFIX'/etc/OpenCL/vendors/'
-./build.sh
-```
-
-### 1. Dataload demostration
-```
-python 1_dataload.py 
-```
-Several input-label pairs that look like the following would be stored in the folder `temp`. 
-![](temp/input_label.png)
-
-### 2. Style translation 
-```
-python 2_augment.py 
-```
-Several images named  with `Debug_xxxxx.png` would appear in the folder `temp`, which look like this:
-
-![](temp/original_vs_generated.png)
-
-where first row of images are original PPAFM images at different heights, while the second row are the corresponding style-transfored images. 
-
-### 3. Train with simplified posnet with style-translated image
-```
-python 3_fit_simplified_posnet.py
-```
-Training without style translation. 
-
-<img src='temp/loss_history_trans0.png' width='30%'/>
-
-Training with style translation. 
-
-<img src='temp/loss_history_trans100.png' width='30%'/>
