@@ -1,6 +1,0 @@
-[submodule "ASD-AFM-dev"]
-	path = ASD-AFM-dev
-	url = git@github.com:SINGROUP/ASD-AFM-dev.git
-[submodule "pytorch-CycleGAN-and-pix2pix"]
-	path = pytorch-CycleGAN-and-pix2pix
-	url = git@github.com:huangchieh/pytorch-CycleGAN-and-pix2pix.git 
