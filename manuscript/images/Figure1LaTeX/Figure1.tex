@@ -1,0 +1,126 @@
+\documentclass[border=0cm]{standalone}
+\usepackage{tikz}
+\usepackage{xcolor}
+\usetikzlibrary{automata, arrows.meta, positioning}
+\usepackage{fontspec}
+\setmainfont{Arial}
+\usepackage{amsmath}
+
+% Define colors based on split-complementary scheme
+% https://copic.too.com/blogs/educational/analogous-complimentary-and-split-complementary-color-schemes?srsltid=AfmBOoqZ8Nt71usioxMxPyKzjQ5vDcxs2B_imasd_wZa50UB5cZX6xCL
+\definecolor{dftcolor}{RGB}{44, 163, 207}  
+\definecolor{simcolor}{RGB}{237, 156, 44} 
+\definecolor{expcolor}{RGB}{222, 70, 28}
+
+% Define styles
+\tikzset{
+	%dft/.style={draw=dftcolor!80!black, fill=dftcolor!40, minimum size=2cm},
+	%simulated/.style={draw=simcolor!80!black, fill=simcolor!30, minimum size=2cm},
+	%experimental/.style={draw=expcolor!80!black, fill=expcolor!40, minimum size=2cm},
+	    imgM/.style={
+		path picture={
+			\node (backgroundM) [anchor=north, yshift=0.9cm] at (path picture bounding box.center) {
+				\includegraphics[width=1.5cm]{atoms.png}
+			};
+		}
+	},
+	    imgU/.style={
+		path picture={
+			\node [anchor=north, yshift=0.9cm] at (path picture bounding box.center) {
+				\includegraphics[width=2cm]{simulation_stack.png}
+			};
+			\node[anchor=north east, text=black, xshift=0.5cm, yshift=0.25cm] at (path picture bounding box.north east) {$u$};
+		}
+	},
+	    imgV/.style={
+		path picture={
+			\node [anchor=north, yshift=0.9cm] at (path picture bounding box.center) {
+				\includegraphics[width=2cm]{exp_stack.png}
+			};
+			\node[anchor=north east, text=black, xshift=0.5cm, yshift=0.25cm] at (path picture bounding box.north east) {$v$};
+		}
+	},
+    dft/.style={draw=dftcolor!80!black, fill=dftcolor!40, shape=rectangle, minimum width=2cm, minimum height=2.2cm, rounded corners=12pt},
+	simulated/.style={draw=simcolor!80!black, fill=simcolor!30, shape=rectangle, minimum width=2cm, minimum height=2.2cm, rounded corners=12pt},
+	experimental/.style={draw=expcolor!80!black, fill=expcolor!40, shape=rectangle, minimum width=2cm, minimum height=2.2cm, rounded corners=12pt},
+	MU/.style={->, line width=1.2pt, color=simcolor},
+	UM/.style={thick, ->, color=dftcolor},
+	UV/.style={->,  line width=1.2pt, color=expcolor},
+	VU/.style={thick, ->, color=simcolor},
+	VM/.style={->, line width=1.2pt, color=dftcolor},
+	annotation/.style={font=\small}
+}
+
+\begin{document}
+	
+	\begin{tikzpicture}[node distance = 5cm, on grid, auto]
+		
+		% Nodes
+		\node (M) [state, dft, imgM] {};
+		\node (U) [state, above right = of M, simulated, imgU] {};
+		\node (V) [state, below right = of U, experimental, imgV] {};
+		
+		% Annotations
+		\node[above=0.8cm of M, annotation, text=black] {$\mathcal{M}$};
+		\node[below=1.3cm of M, annotation, text=dftcolor!0!black] {Atomic configuration};
+		\node[above right = 0.8cm of backgroundM, annotation,  xshift=-0.1cm, text=black,  fill=white,   fill opacity=0.8, text opacity=1, inner sep=1pt, rounded corners=2pt] {$m$};
+		
+		
+		\node[above=0.8cm of U, annotation, text=black] {$\mathcal{U}$};
+		\node[above=1.3cm of U, annotation, text=simcolor!0!black] {Simulated AFM};
+		%\node[below=0.6cm of U, annotation] {images};
+		
+		\node[above=0.8cm of V, annotation, text=black] {$\mathcal{V}$};
+		\node[below=1.3cm of V, annotation, text=expcolor!0!black] {Experimental AFM};
+		%\node[below=0.6cm of V, annotation] {images}; 
+		
+
+		
+		% Arrows (transitions)
+		\path [MU] 
+		(M)  edge [bend left] 
+			node[sloped, above, inner sep=0pt, yshift=0.1ex]  {$H_{\mathcal{M}}$} 
+			%node[sloped, below, inner sep=0pt, yshift=0.1ex, rotate=-15] {\includegraphics[width=0.3cm]{ppm.pdf}}
+			(U);
+		\path [UM]
+		(U) edge [bend left]   node[sloped, above, inner sep=1pt, yshift=0.1ex]{$F_{\mathcal{U}}$}
+		 									 %node[sloped, below, inner sep=0pt, yshift=0.1ex] {\includegraphics[width=0.5cm]{nn.pdf}}  
+		 									 (M);
+
+		\path [UV]
+		(U) edge [bend left]   node[sloped, above, , inner sep=1pt, yshift=0.1ex]    {$G_{\mathcal{U}}$}  
+											 %node[sloped, below, inner sep=0pt, yshift=0.1ex] {\includegraphics[width=0.5cm]{nn.pdf}}  
+											 (V);
+		\path [VU]
+		(V)  edge [bend left]   node[sloped, above, inner sep=1pt, yshift=0.1ex]    {$G_{\mathcal{V}}$}  
+											  %node[sloped, below, inner sep=0pt, yshift=0.1ex] {\includegraphics[width=0.5cm]{nn.pdf}} 
+											  (U);
+		\path [VM]
+		(V)  edge [bend left]   node[sloped, above, inner sep=2pt, yshift=0.1ex]    {$F_{\mathcal{V}}$}  
+		                                      %node[sloped, above, inner sep=0pt, yshift=0.1ex] {\includegraphics[width=0.5cm]{nn.pdf}} 
+		                                      (M);
+		
+	% Legend
+	\begin{scope}[shift={([xshift=-1.1cm,yshift=3.95cm]M.north west)}]
+		\node[
+		anchor=north west,
+		align=left,
+		%draw=black,
+		rounded corners,
+		fill=white,
+		opacity=0,
+		text opacity=1,
+		inner sep=2pt
+		] {
+			\scriptsize
+    \begin{tabular}{@{}l@{\hspace{0.2em}}l@{\hspace{0.em}}l@{}}
+	$H_\mathcal{M}$:  & Probe particle model \raisebox{-0.4ex}{\includegraphics[width=0.3cm]{ppm.pdf}} & \\
+	$F_\mathcal{U}$, $F_\mathcal{V}$: & Structure discovery models \raisebox{-0.4ex}{\includegraphics[width=0.4cm]{nn.pdf}} & \\
+	$G_\mathcal{U}$, $G_\mathcal{V}$: & Style translation models \raisebox{-0.4ex}{\includegraphics[width=0.4cm]{nn.pdf}} &
+	\end{tabular}
+		};
+	\end{scope}
+
+\end{tikzpicture}
+	
+\end{document}
