@@ -1,4 +1,4 @@
-# AFM-Augmentation
+# Improving atomic force microscopy structure discovery via style-translation
 
 ## Abstract
 
