@@ -25,4 +25,4 @@ conda env create -f myenv.yml
 conda activate sta
 ```
 
-**Notes: Most of the analysis code is still in this repository [StructureMetrics](https://github.com/huangchieh/StructureMetrics). We will organise all the codes and move them here soon.**
+**Notes: Lots of the analysis code is still in this repository [StructureMetrics](https://github.com/huangchieh/StructureMetrics). We are organising all the codes and moving them here.**
