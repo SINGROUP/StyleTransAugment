@@ -37,7 +37,7 @@ S. Foster*, Improving atomic force microscopy structure discovery via style-tran
 Or
 
 ```
-@misc{huang2025sta,
+@misc{sin2025sta,
       title={Improving atomic force microscopy structure discovery via style-translation}, 
       author={Jie Huang and Niko Oinonen and Fabio Priante and Filippo Federici Canova and Lauri Kurki and Chen Xu and Adam S. Foster},
       year={2025},
