@@ -27,3 +27,23 @@ where the `snakemake` file is used to show the logic and run the code.
 
 ## Data
 The relevant data used for training can be found at [Zenodo](https://doi.org/10.5281/zenodo.16828078).
+
+## Citation
+Cited as:
+
+> Jie Huang, Niko Oinonen, Fabio Priante, Filippo Federici Canova, Lauri Kurki, Chen Xu, and Adam
+S. Foster*, Improving atomic force microscopy structure discovery via style-translation, arXiv:2509.02240, 2025
+
+Or
+
+```
+@misc{huang2025sta,
+      title={Improving atomic force microscopy structure discovery via style-translation}, 
+      author={Jie Huang and Niko Oinonen and Fabio Priante and Filippo Federici Canova and Lauri Kurki and Chen Xu and Adam S. Foster},
+      year={2025},
+      eprint={2509.02240},
+      archivePrefix={arXiv},
+      primaryClass={cond-mat.mtrl-sci},
+      url={https://arxiv.org/abs/2509.02240}, 
+}
+```
