@@ -23,3 +23,15 @@ rule visualisePredictionsPureOnlyBoth:
                 ./visualisePredictionsPureOnlyBoth.py
                 """
 
+# Theoretical local distributions
+rule calTheoreDistributions:
+    input:
+        script = "calTheoreDistributions.py",
+        data_dir = "../../data/structures/simulations/"
+    output:
+        out_dir = directory("../../results/theoretical_distributions/"),
+        processed_dir = directory("../../processed_data/theory_distributions/")
+    shell:
+        """
+        ./calTheoreDistributions.py
+        """
