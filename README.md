@@ -4,7 +4,7 @@
 <img src="manuscript/TOC/TOC.png" width="50%"/>
 </p>
 
-Source codes for the paper [Improving atomic force microscopy structure discovery via style-translation](https://arxiv.org/pdf/2509.02240).
+Source code for the paper [Improving atomic force microscopy structure discovery via style-translation](https://arxiv.org/pdf/2509.02240).
 
 ## Abstract
 
@@ -24,5 +24,3 @@ Atomic force microscopy (AFM) is a key tool for characterising nanoscale structu
 conda env create -f myenv.yml
 conda activate sta
 ```
-
-**Notes: Lots of the analysis code is still in this repository [StructureMetrics](https://github.com/huangchieh/StructureMetrics). We are organising all the codes and moving them here.**
