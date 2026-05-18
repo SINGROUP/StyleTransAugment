@@ -86,3 +86,19 @@ rule visualiseEvaluateMeanInRadar:
                 """
                 ./visualiseEvaluateMeanInRadar.py
                 """
+
+# Visualise distribution comparisons 
+rule visualiseDistributionCompare:
+        input:
+                script = "visualiseDistributionCompare.py",
+                processed_dir = "../../processed_data/theory_distributions/",
+                similarity_json = "../../processed_data/distribution_distances/similarities_Label_Top.json",
+                npz_P_and_models_dir ="../../processed_data/structure_properties/P/",
+                npz_All_and_Top_dir = "../../processed_data/theory_distributions/Label/"
+
+        output:
+                out_dir = directory("../../results/compare_distributions/")
+        shell:
+                """
+                ./visualiseDistributionCompare.py
+                """
