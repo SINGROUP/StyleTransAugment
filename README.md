@@ -24,3 +24,6 @@ Atomic force microscopy (AFM) is a key tool for characterising nanoscale structu
 conda env create -f myenv.yml
 conda activate sta
 ```
+
+## Data
+The relevant data used for training can be found at [Zenodo](https://doi.org/10.5281/zenodo.16828078).
