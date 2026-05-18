@@ -26,7 +26,8 @@ where the `snakemake` file is used to show the logic and run the code.
 
 
 ## Data
-The relevant data used for training can be found at [Zenodo](https://doi.org/10.5281/zenodo.16828078).
+The training data for the style translation, machine expert, and structure discovery models
+are publicly available at [Zenodo: https://doi.org/10.5281/zenodo.16828078](https://doi.org/10.5281/zenodo.16828078).
 
 ## Citation
 Cited as:
