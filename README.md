@@ -17,4 +17,12 @@ Atomic force microscopy (AFM) is a key tool for characterising nanoscale structu
 3. structureDiscovery: Training the structure discovery model to predict the atomic structures from AFM images.
 4. performanceEvaluation: Performance evaluations of the structure models on the experimental AFM images based on the local structural properties. 
 
+
+## Installation
+
+```bash
+conda env create -f myenv.yml
+conda activate sta
+```
+
 **Notes: Most of the analysis code is still in this repository [StructureMetrics](https://github.com/huangchieh/StructureMetrics). We will organise all the codes and move them here soon.**

@@ -1,4 +1,4 @@
-name: STA
+name: sta
 channels:
   - conda-forge
   - defaults
@@ -19,3 +19,8 @@ dependencies:
       - sphinx-design
       - sphinxcontrib.bibtex
       - git+https://github.com/HuangJiaLian/sphinx-molview.git
+      - tqdm
+      - scikit-learn
+      - geomloss
+      - seaborn
+      - imageio

@@ -1,0 +1,11 @@
+rule visualiseTrainingData:
+    input:
+        script = "visualiseTrainingData.py",
+        data_dir = "../../data/structures/simulations/Label"
+    output:
+        out_dir = directory("../../results/train_data")
+    shell:
+        """
+        python ./visualiseTrainingData.py
+    """
+
