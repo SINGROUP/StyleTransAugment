@@ -14,8 +14,7 @@ Atomic force microscopy (AFM) is a key tool for characterising nanoscale structu
 
 1. StyleTrans (submodule): Using CycleGAN framework for training the style translation model to obtain the style translation models.
 2. preEvaluation: Data-driven approach to evaluate the performance of style translation.
-3. structureDiscovery: Training the structure discovery model to predict the atomic structures from AFM images.
-4. performanceEvaluation: Performance evaluations of the structure models on the experimental AFM images based on the local structural properties. 
+3. performanceEvaluation: Performance evaluations of the structure models on the experimental AFM images based on the local structural properties. 
 
 
 ## Installation
