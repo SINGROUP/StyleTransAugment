@@ -1,5 +1,5 @@
 # Improving atomic force microscopy structure discovery via style-translation
-Source code for the paper "Improving atomic force microscopy structure discovery via style-translation" ([arXiv:2509.02240](https://arxiv.org/pdf/2509.02240)).
+Source code for the paper [arXiv:2509.02240](https://arxiv.org/pdf/2509.02240).
 
 <p align='center'>
 <img src="manuscript/TOC/TOC.png" width="50%"/>
