@@ -1,3 +1,4 @@
+# Show training sample
 rule visualiseTrainingData:
     input:
         script = "visualiseTrainingData.py",
@@ -8,4 +9,17 @@ rule visualiseTrainingData:
         """
         python ./visualiseTrainingData.py
     """
+
+# Compare the predictions from differemt models
+rule visualisePredictionsPureOnlyBoth:
+        input:
+                script = "visualisePredictionsPureOnlyBoth.py",
+                expImage = "../../data/expPNG",
+                predictions = "../../data/structures/predictions"
+        output:
+                output = directory("../../results/predictionsPureOnlyBoth")
+        shell:
+                """
+                ./visualisePredictionsPureOnlyBoth.py
+                """
 
