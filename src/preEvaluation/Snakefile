@@ -1,0 +1,76 @@
+noise_types = ["gaussian", "speckle", "drift", "blur", "saltpepper", "gamma"]
+levels = ["0.01", "0.05", "0.1", "0.2", "0.3", "0.35"]
+
+rule all:
+	input:
+		"../results/fidelity"
+
+rule addNoise:
+    input:
+        "addNoise.py",
+        "../../data/preEvaluate/realA"
+    output:
+        out_dirs = directory(
+            expand("../../data/preEvaluate/noisedA_{noise_type}_{level}", noise_type=noise_types, level=levels)
+        )
+    shell:
+        """
+        ./addNoise.py
+        """
+
+rule visualiseNoisess:
+	input:
+		"visualiseNoisess.py",
+		"../../data/preEvaluate/"
+	output:
+		out=directory("../../results/noiseTypes")	
+	shell:
+		"""
+		./visualiseNoisess.py
+		"""
+
+rule fidelityTest:
+	input:
+		"fidelityTest.py",
+		'../../data/preEvaluate/', 
+		"../../processed_data/pre_evaluation/learned_model/"
+	output:
+		"../../processed_data/fidelityTest/fidelity_results.csv"
+	shell:
+		"""
+		./fidelityTest.py
+		"""
+
+rule distanceAnalysis:
+	input:
+		"distanceAnalysis.py", 
+		"../../data/preEvaluate", 
+	output:
+		out=directory("../../results/distance_analysis")
+	shell:
+		"""
+		./distanceAnalysis.py
+		"""
+
+rule fidelityVisualization:
+	input:
+		"fidelityVisualization.py",
+		"../../processed_data/fidelityTest/fidelity_results.csv", 
+		"../../results/distance_analysis",
+	output:
+		out=directory("../../results/fidelity")
+	shell:
+		"""
+		./fidelityVisualization.py
+		"""
+
+rule visualiseSamples:
+	input: 
+		"visualiseSamples.py",
+		"../../data/preEvaluate/"
+	output:
+		directory("../../results/samples")
+	shell:
+		"""
+		./visualiseSamples.py
+		"""

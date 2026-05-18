@@ -1,0 +1,62 @@
+{
+  "W(V, V)": {
+    "mean": 0.0,
+    "stderr": 0.0
+  },
+  "W(U, V)": {
+    "mean": 0.7867403216417264,
+    "stderr": 0.0
+  },
+  "W(V_tilde, V)": {
+    "mean": 0.03555195058157045,
+    "stderr": 0.005196127437056511
+  },
+  "W(noisedA_noise_previous, V)": {
+    "mean": 0.8043887069928711,
+    "stderr": 0.0007402073894565076
+  },
+  "W(noisedA_cutout_previous, V)": {
+    "mean": 0.8127768225376432,
+    "stderr": 0.005061743128672603
+  },
+  "W(noisedA_gradient_previous, V)": {
+    "mean": 0.7811626177789378,
+    "stderr": 0.004173245139509175
+  },
+  "W(noisedA_saltpepper, V)": {
+    "mean": 0.8159316934891815,
+    "stderr": 0.003150306377412114
+  },
+  "W(noisedA_combined_previous, V)": {
+    "mean": 0.8068729265320124,
+    "stderr": 0.0061339167575720265
+  },
+  "FID(U, V)": {
+    "mean": 216.3849639892578,
+    "stderr": 0.0
+  },
+  "FID(V_tilde, V)": {
+    "mean": 136.46269452130352,
+    "stderr": 3.955473393471366
+  },
+  "FID(noisedA_noise_previous, V)": {
+    "mean": 147.82632446289062,
+    "stderr": 0.19511876531229666
+  },
+  "FID(noisedA_cutout_previous, V)": {
+    "mean": 210.73852030436197,
+    "stderr": 0.8282560202004838
+  },
+  "FID(noisedA_gradient_previous, V)": {
+    "mean": 200.38898213704428,
+    "stderr": 0.35101470377963645
+  },
+  "FID(noisedA_saltpepper, V)": {
+    "mean": 352.0013478597005,
+    "stderr": 0.5722708614735081
+  },
+  "FID(noisedA_combined_previous, V)": {
+    "mean": 167.64860026041666,
+    "stderr": 0.7146386035843392
+  }
+}
