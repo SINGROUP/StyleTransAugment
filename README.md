@@ -2,7 +2,7 @@
 This is the source code for our paper [https://arxiv.org/abs/2509.02240](https://arxiv.org/abs/2509.02240).
 
 <p align='center'>
-<img src="manuscript/TOC/TOC.png" width="100%"/>
+<img src="manuscript/TOC/TOC.png" width="70%"/>
 </p>
 
 ## Abstract
