@@ -33,7 +33,7 @@ are publicly available at [Zenodo: https://doi.org/10.5281/zenodo.16828078](http
 Cited as:
 
 > Jie Huang, Niko Oinonen, Fabio Priante, Filippo Federici Canova, Lauri Kurki, Chen Xu, and Adam
-S. Foster*, Improving atomic force microscopy structure discovery via style-translation, arXiv:2509.02240, 2025
+S. Foster, Improving atomic force microscopy structure discovery via style-translation, arXiv:2509.02240, 2025
 
 Or
 
