@@ -1,7 +1,7 @@
 # Improving atomic force microscopy structure discovery via style-translation
 
 <p align='center'>
-<img src="manuscript/TOC/TOC.png" width="70%"/>
+<img src="manuscript/TOC/TOC.png" width="50%"/>
 </p>
 
 Source codes for the paper [Improving atomic force microscopy structure discovery via style-translation](https://arxiv.org/pdf/2509.02240).
