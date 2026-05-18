@@ -35,3 +35,54 @@ rule calTheoreDistributions:
         """
         ./calTheoreDistributions.py
         """
+
+# Calculate the distributions for predicted configurations for different models
+rule calDistributions:
+    input:
+        script = "calDistributions.py",
+        tool = "water.py",
+        data_dir = "../../data/structures/predictions"
+    output:
+        out_dir = directory("../../processed_data/structure_properties")
+    shell:
+        """
+        ./calDistributions.py
+        """
+
+# Calculate the distribution distances between prediction and theory
+rule calDistances:
+    input:
+        script = "calDistances.py",
+        theory = "../../processed_data/theory_distributions",
+        data_dir = "../../processed_data/structure_properties"
+    output:
+        out_dir = directory("../../processed_data/distribution_distances")
+    shell:
+        """
+        ./calDistances.py
+        """
+
+# Visualise model performance individually
+rule visualiseRadar:
+        input:
+                "visualiseRadar.py",
+                 "../../processed_data/distribution_distances/similarities_Label_All.json",
+                 "../../processed_data/distribution_distances/similarities_Label_Top.json",
+        output:
+                out_dir = directory("../../results/radar")
+        shell:
+                """
+                ./visualiseRadar.py
+                """
+# Visualise mean performance for the same hyperparameter
+rule visualiseEvaluateMeanInRadar:
+        input:
+                "visualiseRadar.py",
+                 "../../processed_data/distribution_distances/similarities_Label_All.json",
+                 "../../processed_data/distribution_distances/similarities_Label_Top.json",
+        output:
+                out_dir = directory("../../results/meanInRadar")
+        shell:
+                """
+                ./visualiseEvaluateMeanInRadar.py
+                """

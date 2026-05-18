@@ -15,6 +15,11 @@ plt.rcParams['svg.fonttype'] = 'none'
 plt.rcParams['text.usetex'] = True # Render text with LaTeX
 
 def radar_plot(ax, mins, maxs, data, labels, color=None, alpha_fill=0.5, errors=None, title=None, legend=None):
+    mins = np.asarray(mins, dtype=float)
+    maxs = np.asarray(maxs, dtype=float)
+    data = np.asarray(data, dtype=float)
+    if errors is not None:
+        errors = np.asarray(errors, dtype=float)
     # normalize data
     data = (data - mins) / (maxs - mins)
     # Convert the data 
