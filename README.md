@@ -49,6 +49,7 @@ rule visualiseTrainingData:
 ...
 ```
 3. Run it using `'snakemake --cores 1 visualiseTrainingData`.
+
 If you have any questions about the code, feel free to [open an issue](https://github.com/SINGROUP/StyleTransAugment/issues/new).
 
 
