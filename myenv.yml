@@ -1,0 +1,21 @@
+name: STA
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3
+  - sphinx
+  - numpy
+  - matplotlib
+  - pandas
+  - ase
+  - pip
+  - pip:
+      - furo
+      - myst-parser
+      - snakemake
+      - sphinx-tabs
+      - sphinx-copybutton
+      - sphinx-design
+      - sphinxcontrib.bibtex
+      - git+https://github.com/HuangJiaLian/sphinx-molview.git
