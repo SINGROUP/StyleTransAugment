@@ -32,7 +32,6 @@ cd src/performanceEvaluation/
 ```
 For each Python, there's a rule to run it in `Snakefile`:
 ```
-...
 # Show training sample
 rule visualiseTrainingData:
     input:
@@ -43,8 +42,7 @@ rule visualiseTrainingData:
     shell:
         """
         python ./visualiseTrainingData.py
-    """
-...
+        """
 ```
 3. Run it using `'snakemake --cores 1 visualiseTrainingData`.
 
