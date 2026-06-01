@@ -7,6 +7,8 @@ from drawarrow import ax_arrow
 import seaborn as sns
 import numpy as np
 from scipy.stats import gaussian_kde
+from matplotlib.container import ErrorbarContainer
+from matplotlib.legend_handler import HandlerErrorbar
 import os, json 
 # %% Functions
 def plot_fidelity(x, y1, y2, color1, color2, axes, left=True, right=True, top=True, bottom=True, title=None, xlabel=None, rotate=True):
@@ -43,11 +45,11 @@ if __name__ == "__main__":
     #noiseTypes = ['gaussian', 'saltpepper', 'blur', 'gamma', 'speckle', 'drift']
     noiseTypes = ['noise_previous', 'cutout_previous', 'gradient_previous', 'combined_previous', 'saltpepper']
     noiseULabels = [
-                    rf"$\bar{{\mathcal{{V}}}}_\text{{1: Gaussian}}$",
-                    rf"$\bar{{\mathcal{{V}}}}_\text{{2: Cutout}}$",
-                    rf"$\bar{{\mathcal{{V}}}}_\text{{3: Gradient BG}}$",
-                    rf"$\bar{{\mathcal{{V}}}}_\text{{4: Combination}}$",
-                    rf"$\bar{{\mathcal{{V}}}}_\text{{5: Salt \& Pepper}}$",
+                    rf"$\overline{{\mathcal{{V}}}}_\text{{1: Gaussian}}$",
+                    rf"$\overline{{\mathcal{{V}}}}_\text{{2: Cutout}}$",
+                    rf"$\overline{{\mathcal{{V}}}}_\text{{3: Gradient BG}}$",
+                    rf"$\overline{{\mathcal{{V}}}}_\text{{4: Combination}}$",
+                    rf"$\overline{{\mathcal{{V}}}}_\text{{5: Salt \& Pepper}}$",
                     ]
     df = pd.read_csv("../../processed_data/fidelityTest/fidelity_results.csv")
     df_u = df[df["Class"].str.contains("realA")]
@@ -127,7 +129,7 @@ if __name__ == "__main__":
     kde_mean_vt = np.mean(kdes_vt, axis=0)
     error = np.std(kdes_vt, axis=0) 
     color1 = simcolor
-    plot_fidelity(x, kde_mean_vt, y2,  color1, color2, axes[1], left=True, right=True, title=rf"$\tilde{{\mathcal{{V}}}}$", rotate=False)
+    plot_fidelity(x, kde_mean_vt, y2,  color1, color2, axes[1], left=True, right=True, title=rf"$\widetilde{{\mathcal{{V}}}}$", rotate=False)
 
     # 3. Plot each noise type independently
     for i, (noise_type, noise_data) in enumerate(zip(noise_types, noise_dfs)):
@@ -143,12 +145,14 @@ if __name__ == "__main__":
 
     # 4. Placeholder for additional plot
     print("Distances:", distances)
+    marker_area = 180
+    marker_size = 9
     # V
-    axes[-1].scatter(0, 0, marker='*', color='none', edgecolors=expcolor, s=120, label=rf'$\mathcal{{V}}$', linewidths=1)  # V
+    axes[-1].scatter(0, 0, marker='*', color='none', edgecolors=expcolor, s=marker_area, label=rf'$\mathcal{{V}}$', linewidths=1)  # V
     # U
     x_mean_U, x_std = distances['FID(U, V)']['mean'], distances['FID(U, V)']['stderr']
     y_mean_U, y_std = distances['W(U, V)']['mean'], distances['W(U, V)']['stderr']
-    axes[-1].scatter(x_mean_U, y_mean_U, color='none', edgecolors=dftcolor, s=120, label=rf'$\mathcal{{U}}$', linewidths=1)
+    axes[-1].scatter(x_mean_U, y_mean_U, color='none', edgecolors=dftcolor, s=marker_area, label=rf'$\mathcal{{U}}$', linewidths=1)
     # Draw a arrow from U to (0, 0)
     scale = 0.5
     ax_arrow(
@@ -169,7 +173,7 @@ if __name__ == "__main__":
     mid_y = (y_mean_U) / 4
     axes[-1].text(
         mid_x, mid_y, "Ideal translation",
-        color="grey", fontsize=10, rotation=43,
+        color="grey", fontsize=10, rotation=47,
         ha='left', va='bottom', rotation_mode='anchor'
     )
 
@@ -180,8 +184,8 @@ if __name__ == "__main__":
     axes[-1].errorbar(
         x_mean_tV, y_mean_tV, xerr=x_std, yerr=y_std, fmt='o', 
         markerfacecolor='none', markeredgecolor=simcolor, color=simcolor, 
-        #markersize=12,  # Set marker size here
-        label=rf'$\tilde{{\mathcal{{V}}}}$'
+        markersize=marker_size,
+        label=rf'$\widetilde{{\mathcal{{V}}}}$'
     )
     # Draw a arrow from tilde V to (0, 0)
     ax_arrow(
@@ -200,7 +204,7 @@ if __name__ == "__main__":
     mid_y_tV = (y_mean_U + y_mean_tV) / 6
     axes[-1].text(
         mid_x_tV, mid_y_tV, "Style translation",
-        color="grey", fontsize=10, rotation=67,
+        color="grey", fontsize=10, rotation=70,
         ha='left', va='bottom', rotation_mode='anchor'
     )
 
@@ -212,12 +216,16 @@ if __name__ == "__main__":
     #for i, (noise_type, noise_data) in enumerate(zip(noise_types[-3:], noise_dfs[-3:]), start=len(noise_types)-3):
         x_mean, x_std = distances[f'FID({noise_type}, V)']['mean'], distances[f'FID({noise_type}, V)']['stderr']
         y_mean, y_std = distances[f'W({noise_type}, V)']['mean'], distances[f'W({noise_type}, V)']['stderr']
+        current_marker_size = marker_size - 1 if noise_type == 'noisedA_cutout_previous' else marker_size
         if noise_type == 'noisedA_saltpepper':
             x_, y_ = x_mean, y_mean
-        marker = markers[i % len(markers)]
+            marker = 'p'
+        else:
+            marker = markers[i % len(markers)]
         axes[-1].errorbar(
             x_mean, y_mean, xerr=x_std, yerr=y_std, fmt=marker, 
             markerfacecolor='none', markeredgecolor=simcolor, color=simcolor,
+            markersize=current_marker_size,
             label=noiseULabels[i])
     # Draw a arrow from tilde U to (x_, y_)
     ax_arrow(
@@ -239,8 +247,8 @@ if __name__ == "__main__":
         [y_mean_U, y_mean_U], 
         color=dftcolor, 
         alpha=0.2, 
-        linewidth=1,         # ensure no border
-        label='Start gap'
+        linewidth=0,
+        edgecolor='none'
     ) 
     axes[-1].fill_between(
         [0, x_mean_tV],  # FID range
@@ -248,15 +256,27 @@ if __name__ == "__main__":
         [y_mean_tV, y_mean_tV], # top edge (flat at tildeV)
         color=simcolor,
         alpha=0.5,
-        linewidth=1,         # ensure no border
-        label='End gap'
+        linewidth=0,
+        edgecolor='none'
     )
 
 
-    new_labels = [rf'$\mathcal{{U}}$', rf"$\tilde{{\mathcal{{V}}}}$", 'Gaussian', 'Speckle', 'Drift', 'Blur', 'Saltpepper', 'Gamma'] 
+    new_labels = [rf'$\mathcal{{U}}$', rf"$\widetilde{{\mathcal{{V}}}}$", 'Gaussian', 'Speckle', 'Drift', 'Blur', 'Saltpepper', 'Gamma'] 
     axes[-1].set_xlabel(r"$\mathrm{FID}(\cdot ,\, \mathcal{V})$")
     axes[-1].set_ylabel(r"$\mathrm{WD}(\cdot ,\, \mathcal{V})$")
-    axes[-1].legend(loc='lower right', fontsize=10, frameon=False, handlelength=1, borderpad=0.3, labelspacing=0.2, handletextpad=0.4, borderaxespad=0.2)
+    axes[-1].legend(
+        loc='lower right',
+        fontsize=10,
+        frameon=False,
+        handlelength=0.8,
+        borderpad=0.3,
+        labelspacing=0.2,
+        handletextpad=0.4,
+        borderaxespad=0.2,
+        handler_map={
+            ErrorbarContainer: HandlerErrorbar(xerr_size=0.2, yerr_size=0.2)
+        }
+    )
     fig.subplots_adjust(hspace=0.3, wspace=0.1, left=0.1, bottom=0.2, right=0.95, top=0.99)
     plt.savefig(f"{outputFolder}/distance.png", dpi=600)
     plt.savefig(f"{outputFolder}/distance.pdf")

@@ -1,10 +1,10 @@
 W(V, V): 0.0000 ± 0.0000
 W(U, V): 0.7867 ± 0.0000
-W(V_tilde, V): 0.0356 ± 0.0052
+W(V_tilde, V): 0.0355 ± 0.0052
 W(noisedA_noise_previous, V): 0.8044 ± 0.0007
 W(noisedA_cutout_previous, V): 0.8128 ± 0.0051
 W(noisedA_gradient_previous, V): 0.7812 ± 0.0042
-W(noisedA_saltpepper, V): 0.8159 ± 0.0032
+W(noisedA_saltpepper, V): 0.8159 ± 0.0031
 W(noisedA_combined_previous, V): 0.8069 ± 0.0061
 FID(U, V): 216.3850 ± 0.0000
 FID(V_tilde, V): 136.4627 ± 3.9555
