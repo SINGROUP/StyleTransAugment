@@ -17,6 +17,7 @@ import numpy as np
 import imageio.v3 as iio  
 
 from utils import get_scan_window_from_xyz, draw_unit_cells, draw_3d_axis_indicator
+
 # Input structure for visualization
 demoIndex = 0
 demoStructure = f'../../data/structures/simulations/Label/{demoIndex}.xyz'
@@ -33,7 +34,7 @@ if not os.path.exists(figure_folder):
 sw=((0, 0, 0), (31.875, 31.875, 2.4))
 ss = (25.6, 25.6, 2.4)
 sw_x, sw_y, sw_z = sw[1][0], sw[1][0], sw[1][2] 
-show=False
+show=True
 showScanRegion = False
 showImageRegion = True
 showLattice = True
@@ -80,15 +81,31 @@ xyz_center = xyz_center + lattice_vectors[0] + lattice_vectors[1] #+ (repNum[2]-
 xy_center = xyz_center[:2]
 
 supercellList = sorted(supercell, key=lambda atom: atom.position[2])
-h_flag, o_flag, au_flag = 'H', 'O', 'Au'
+au_z_top = float(np.max(subPositions[:, 2]))
+z_threshold_layer = 4.85  # Relative to top Au plane, consistent with bilayer analysis.
+o_mask = supercell.numbers == 8
+o_z_rel = supercell.positions[o_mask, 2] - au_z_top
+o_z_min = float(np.min(o_z_rel))
+o_z_max = float(np.max(o_z_rel))
+o_z_span = max(o_z_max - o_z_min, 1e-9)
 for atom in supercellList:
     color = jmol_colors[atom.number]
     radius = radii[atom.number]
-    if atom.number == 1:
-        circle = Circle((atom.x, atom.y), radius, facecolor=color,
+    if atom.number == 8:
+        z_rel = float(atom.position[2] - au_z_top)
+        o_alpha = 0.20 + 0.80 * np.clip((z_rel - o_z_min) / o_z_span, 0.0, 1.0)
+        face_rgba = (color[0], color[1], color[2], o_alpha)
+        circle = Circle((atom.x, atom.y), radius, facecolor=face_rgba,
                         edgecolor='k', linewidth=0.5)
-    elif atom.number == 8:
-        circle = Circle((atom.x, atom.y), radius, facecolor=color, edgecolor='k', linewidth=0.5)
+    elif atom.number == 1:
+        z_rel = float(atom.position[2] - au_z_top)
+        if z_rel <= z_threshold_layer:
+            face_rgba = (color[0], color[1], color[2], 0.40)
+            circle = Circle((atom.x, atom.y), radius, facecolor=face_rgba,
+                            edgecolor='k', linewidth=0.5)
+        else:
+            circle = Circle((atom.x, atom.y), radius, facecolor=color,
+                            edgecolor='k', linewidth=0.5)
     else:
         circle = Circle((atom.x, atom.y), radius, facecolor=color, alpha=0.5)
     ax1.add_patch(circle)
