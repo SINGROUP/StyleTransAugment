@@ -17,6 +17,7 @@ import numpy as np
 import imageio.v3 as iio  
 
 from utils import get_scan_window_from_xyz, draw_unit_cells, draw_3d_axis_indicator
+
 # Input structure for visualization
 demoIndex = 0
 demoStructure = f'../../data/structures/simulations/Label/{demoIndex}.xyz'
@@ -33,7 +34,7 @@ if not os.path.exists(figure_folder):
 sw=((0, 0, 0), (31.875, 31.875, 2.4))
 ss = (25.6, 25.6, 2.4)
 sw_x, sw_y, sw_z = sw[1][0], sw[1][0], sw[1][2] 
-show=False
+show=True
 showScanRegion = False
 showImageRegion = True
 showLattice = True
@@ -80,15 +81,20 @@ xyz_center = xyz_center + lattice_vectors[0] + lattice_vectors[1] #+ (repNum[2]-
 xy_center = xyz_center[:2]
 
 supercellList = sorted(supercell, key=lambda atom: atom.position[2])
-h_flag, o_flag, au_flag = 'H', 'O', 'Au'
+au_z_top = float(np.max(subPositions[:, 2]))
+z_threshold_layer = 4.85  # Relative to top Au plane, consistent with bilayer analysis.
 for atom in supercellList:
     color = jmol_colors[atom.number]
     radius = radii[atom.number]
-    if atom.number == 1:
-        circle = Circle((atom.x, atom.y), radius, facecolor=color,
-                        edgecolor='k', linewidth=0.5)
-    elif atom.number == 8:
-        circle = Circle((atom.x, atom.y), radius, facecolor=color, edgecolor='k', linewidth=0.5)
+    if atom.number in [1, 8]:
+        z_rel = float(atom.position[2] - au_z_top)
+        if z_rel <= z_threshold_layer:
+            face_rgba = (color[0], color[1], color[2], 0.40)
+            circle = Circle((atom.x, atom.y), radius, facecolor=face_rgba,
+                            edgecolor='k', linewidth=0.5)
+        else:
+            circle = Circle((atom.x, atom.y), radius, facecolor=color,
+                            edgecolor='k', linewidth=0.5)
     else:
         circle = Circle((atom.x, atom.y), radius, facecolor=color, alpha=0.5)
     ax1.add_patch(circle)
@@ -144,6 +150,21 @@ ax1.set_xticklabels([f'{x-50:.0f}' for x in xticks])
 offset = 2.5
 ax1.set_xlim([xy_center[0]-sw_x/2-offset, xy_center[0]+sw_x/2+offset])
 ax1.set_ylim([xy_center[1]-sw_y/2-offset, xy_center[1]+sw_y/2+offset])
+
+# Show P0/P1 in atomic XY view using full XY-plane height as reference.
+p_line_x = 0.50
+p0_y = 0.20
+p1_y = 0.80
+ax1.plot([p_line_x, p_line_x], [0.0, 1.0], color='grey', linestyle='dashed', lw=1.0,
+         zorder=10, transform=ax1.transAxes)
+ax1.plot(p_line_x, p0_y, marker='.', color='grey', markersize=10, zorder=11,
+         transform=ax1.transAxes)
+ax1.plot(p_line_x, p1_y, marker='.', color='grey', markersize=10, zorder=11,
+         transform=ax1.transAxes)
+ax1.text(p_line_x + 0.04, p0_y, r"P$_0$", va='center', ha='left', fontsize=14,
+         color='grey', transform=ax1.transAxes)
+ax1.text(p_line_x + 0.04, p1_y, r"P$_1$", va='center', ha='left', fontsize=14,
+         color='grey', transform=ax1.transAxes)
 #ax1.set_xlabel(r'$x$ (nm)')
 #ax1.set_ylabel(r'$y$ (nm)')
 ax1.set_xlabel(r'$x$ (Å)')
