@@ -89,7 +89,7 @@ for atom in supercellList:
     if atom.number in [1, 8]:
         z_rel = float(atom.position[2] - au_z_top)
         if z_rel <= z_threshold_layer:
-            face_rgba = (color[0], color[1], color[2], 0.30)
+            face_rgba = (color[0], color[1], color[2], 0.40)
             circle = Circle((atom.x, atom.y), radius, facecolor=face_rgba,
                             edgecolor='k', linewidth=0.5)
         else:
@@ -150,6 +150,21 @@ ax1.set_xticklabels([f'{x-50:.0f}' for x in xticks])
 offset = 2.5
 ax1.set_xlim([xy_center[0]-sw_x/2-offset, xy_center[0]+sw_x/2+offset])
 ax1.set_ylim([xy_center[1]-sw_y/2-offset, xy_center[1]+sw_y/2+offset])
+
+# Show P0/P1 in atomic XY view using full XY-plane height as reference.
+p_line_x = 0.50
+p0_y = 0.20
+p1_y = 0.80
+ax1.plot([p_line_x, p_line_x], [0.0, 1.0], color='grey', linestyle='dashed', lw=1.0,
+         zorder=10, transform=ax1.transAxes)
+ax1.plot(p_line_x, p0_y, marker='.', color='grey', markersize=10, zorder=11,
+         transform=ax1.transAxes)
+ax1.plot(p_line_x, p1_y, marker='.', color='grey', markersize=10, zorder=11,
+         transform=ax1.transAxes)
+ax1.text(p_line_x + 0.04, p0_y, r"P$_0$", va='center', ha='left', fontsize=14,
+         color='grey', transform=ax1.transAxes)
+ax1.text(p_line_x + 0.04, p1_y, r"P$_1$", va='center', ha='left', fontsize=14,
+         color='grey', transform=ax1.transAxes)
 #ax1.set_xlabel(r'$x$ (nm)')
 #ax1.set_ylabel(r'$y$ (nm)')
 ax1.set_xlabel(r'$x$ (Å)')
