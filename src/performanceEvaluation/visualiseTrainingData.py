@@ -573,7 +573,7 @@ y_positions = z_plot_cs
 ymin, ymax = min(y_positions), max(y_positions)
 
 offset = 1
-xmin, xmax = 0.0, ss[1]
+xmin, xmax = -4.0, 28.0
 ymin, ymax = ymin - 2*offset, ymax + 5*offset
 
 #xticks = np.arange(xmin, xmax, 10)
@@ -584,7 +584,7 @@ ymin, ymax = ymin - 2*offset, ymax + 5*offset
 #ax1.set_yticklabels([f'{y/10:.0f}' for y in yticks])  # Convert Å to nm
 ax1.set_xlim([xmin, xmax])
 ax1.set_ylim([ymin, ymax])
-ax1.set_xticks(np.arange(0, ss[1] + 0.1, 5))
+ax1.set_xticks([0, 5, 10, 15, 20, 25])
 ax1.tick_params(axis='both', direction='in', labelright=False)
 ax1.set_xlabel(r'$y$ (Å)')
 ax1.set_ylabel(r'$z$ (Å)')
