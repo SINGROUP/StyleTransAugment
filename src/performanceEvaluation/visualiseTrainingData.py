@@ -53,6 +53,8 @@ OVERLAY_H_SCALE = 0.33       # H size auto-scales from O size: H = OVERLAY_O_SIZ
 OH_BOND_CUTOFF = 1.30        # O-H cutoff (A) used to pair H atoms to selected O atoms.
 OH_BOND_LINEWIDTH = 0.8
 OH_BOND_COLOR = '#bfe8ff'
+AFM_ROTATE_K = 3             # Display rotation for AFM images. 0 keeps original XY orientation.
+XY_VIEW_ROTATE_K = 3         # Rotate atomic XY view to match AFM orientation (90 deg CCW per +1).
 
 plt.rcParams['font.size']=14
 #plt.rcParams['font.family']='Arial'
@@ -63,6 +65,36 @@ plt.rcParams['text.usetex'] = True # Render text with LaTeX
 
 xyz_min, xyz_max = get_scan_window_from_xyz(demoStructure)
 xyz_center = xyz_min + (xyz_max - xyz_min)/2
+
+
+def rotate_xy_about_center(x, y, cx, cy, k):
+    """Rotate XY points about (cx, cy) by 90-degree steps."""
+    k = int(k) % 4
+    x_arr = np.asarray(x, dtype=float)
+    y_arr = np.asarray(y, dtype=float)
+    dx = x_arr - cx
+    dy = y_arr - cy
+    if k == 0:
+        xr, yr = dx, dy
+    elif k == 1:
+        xr, yr = -dy, dx
+    elif k == 2:
+        xr, yr = -dx, -dy
+    else:
+        xr, yr = dy, -dx
+    return xr + cx, yr + cy
+
+
+def rotate_xy_vector(vx, vy, k):
+    """Rotate XY vector components by 90-degree steps."""
+    k = int(k) % 4
+    if k == 0:
+        return vx, vy
+    if k == 1:
+        return -vy, vx
+    if k == 2:
+        return -vx, -vy
+    return vy, -vx
 
 ####################################################################
 # 1. Plot the atoms of demonstration configuration in the xy plane
@@ -95,25 +127,42 @@ z_threshold_layer = 4.85  # Relative to top Au plane, consistent with bilayer an
 for atom in supercellList:
     color = jmol_colors[atom.number]
     radius = radii[atom.number]
+    atom_x_plot, atom_y_plot = rotate_xy_about_center(
+        atom.x, atom.y, xy_center[0], xy_center[1], XY_VIEW_ROTATE_K
+    )
     if atom.number in [1, 8]:
         z_rel = float(atom.position[2] - au_z_top)
         if z_rel <= z_threshold_layer:
             face_rgba = (color[0], color[1], color[2], 0.40)
-            circle = Circle((atom.x, atom.y), radius, facecolor=face_rgba,
+            circle = Circle((atom_x_plot, atom_y_plot), radius, facecolor=face_rgba,
                             edgecolor='k', linewidth=0.5)
         else:
-            circle = Circle((atom.x, atom.y), radius, facecolor=color,
+            circle = Circle((atom_x_plot, atom_y_plot), radius, facecolor=color,
                             edgecolor='k', linewidth=0.5)
     else:
-        circle = Circle((atom.x, atom.y), radius, facecolor=color, alpha=0.5)
+        circle = Circle((atom_x_plot, atom_y_plot), radius, facecolor=color, alpha=0.5)
     ax1.add_patch(circle)
 #print(type(supercell))   
 #plot_atoms(supercell, ax1, radii=0.8, show_unit_cell=True)
 xy_origin = subPositions[:, :2].min(axis=0)
-draw_unit_cells(ax1, origin=np.array([xy_origin[0], xy_origin[1], 0]), cell_vectors=lattice_vectors, nx=3, ny=3)
+origin_x_plot, origin_y_plot = rotate_xy_about_center(
+    xy_origin[0], xy_origin[1], xy_center[0], xy_center[1], XY_VIEW_ROTATE_K
+)
+lattice_vectors_xy = lattice_vectors.copy()
+for vi in [0, 1]:
+    vx, vy = lattice_vectors_xy[vi, 0], lattice_vectors_xy[vi, 1]
+    rvx, rvy = rotate_xy_vector(vx, vy, XY_VIEW_ROTATE_K)
+    lattice_vectors_xy[vi, 0], lattice_vectors_xy[vi, 1] = rvx, rvy
+draw_unit_cells(
+    ax1,
+    origin=np.array([origin_x_plot, origin_y_plot, 0]),
+    cell_vectors=lattice_vectors_xy,
+    nx=3,
+    ny=3,
+)
 
 if showIndicator:
-    draw_3d_axis_indicator(ax1, anchor=(0.86, 0.052), length=40)
+    draw_3d_axis_indicator(ax1, anchor=(0.86, 0.12), length=40, rotate_k=XY_VIEW_ROTATE_K)
 
 if showScanRegion:
     sw = ((xy_center[0] - 31.875 / 2, xy_center[1] - 31.875 / 2, sw[0][2]),
@@ -124,9 +173,11 @@ if showScanRegion:
     # Width and height
     width, height = x1 - x0, y1 - y0
     # Create and add rectangle
-    rect = Rectangle((x0, y0), width, height, linewidth=1, edgecolor='r',
-                     facecolor='none', label='scan region')
-    ax1.add_patch(rect)
+    scan_corners = np.array([[x0, y0], [x1, y0], [x1, y1], [x0, y1], [x0, y0]], dtype=float)
+    sx_plot, sy_plot = rotate_xy_about_center(
+        scan_corners[:, 0], scan_corners[:, 1], xy_center[0], xy_center[1], XY_VIEW_ROTATE_K
+    )
+    ax1.plot(sx_plot, sy_plot, color='r', lw=1, label='scan region')
 
 
 
@@ -140,12 +191,12 @@ if showImageRegion:
     width = x1 - x0
     height = y1 - y0
     # Create and add rectangle
-    rect = Rectangle((x0, y0), width, height, linewidth=1, edgecolor='k',
-                     facecolor='none', label='image region')
-    ax1.add_patch(rect)
-    offset_x = 0.04 * width
-    offset_y = 0.04 * height
-    ax1.text(x0 - 1.3*offset_x, y1 + 1.3*offset_y, r"$m$", va='top', ha='left')
+    image_corners = np.array([[x0, y0], [x1, y0], [x1, y1], [x0, y1], [x0, y0]], dtype=float)
+    ix_plot, iy_plot = rotate_xy_about_center(
+        image_corners[:, 0], image_corners[:, 1], xy_center[0], xy_center[1], XY_VIEW_ROTATE_K
+    )
+    ax1.plot(ix_plot, iy_plot, color='k', lw=1, label='image region')
+    ax1.text(0.12, 0.88, r"$m$", transform=ax1.transAxes, va='top', ha='left')
 
 
 yticks = np.arange(20, 70.1, 5)
@@ -207,6 +258,18 @@ print(xImgMin, xImgMax)
 print(yImgMin, yImgMax)
 
 
+def rotate_pixels(px0, py0, h0, w0, k):
+    """Map pixel coordinates after np.rot90(image, k)."""
+    k = int(k) % 4
+    if k == 0:
+        return px0, py0
+    if k == 1:
+        return py0, (w0 - 1) - px0
+    if k == 2:
+        return (w0 - 1) - px0, (h0 - 1) - py0
+    return (h0 - 1) - py0, px0
+
+
 
 # Select O (8) and H (1) atoms
 is_water_atom = (numbers == 1) | (numbers == 8)
@@ -263,7 +326,7 @@ for j in range(cols):
         else:
             imagePath = '{}/FakeAFM/{:.2f}.png'.format(exampleInput, i * 0.1 * dz) # FakeAFM
         image = iio.imread(imagePath).astype(np.float32)  
-        rotated_image = np.rot90(image, k=3)
+        rotated_image = np.rot90(image, k=AFM_ROTATE_K)
         all_images.append(rotated_image)
 all_images_np = np.array(all_images)
 vmin = all_images_np.min()
@@ -312,16 +375,16 @@ for j in range(cols): # Columns
         if j == 0:
             imagePath = '{}/PPAFM/{:.2f}.png'.format(exampleInput, i * 0.1 * dz) # PPAFM
             image = iio.imread(imagePath).astype(np.float32)  # or use imageio.imread for older versions
-            rotated_image = np.rot90(image, k=3)  # 90 degrees counter-clockwise
+            rotated_image = np.rot90(image, k=AFM_ROTATE_K)
             im = ax.imshow(rotated_image, cmap='inferno', vmin=vmin, vmax=vmax)
         elif j == 1:
             imagePath = '{}/FakeAFM/{:.2f}.png'.format(exampleInput, i * 0.1 * dz) # FakeAFM
             image = iio.imread(imagePath).astype(np.float32)  # or use imageio.imread for older versions
-            rotated_image = np.rot90(image, k=3)  # 90 degrees counter-clockwise
+            rotated_image = np.rot90(image, k=AFM_ROTATE_K)
             im = ax.imshow(rotated_image, cmap='inferno', vmin=vmin, vmax=vmax)
         elif j == 2:
             image = all_error_maps[i]  # Use the error map
-            rotated_image = np.rot90(image, k=3)  # 90 degrees counter-clockwise
+            rotated_image = np.rot90(image, k=AFM_ROTATE_K)
             im = ax.imshow(rotated_image, cmap='BrBG', vmin=emin, vmax=emax)
 
         if i == 0 and j in [0, 1] and overlay_indices.size > 0:
@@ -331,9 +394,7 @@ for j in range(cols): # Columns
             y_norm = (overlay_xy[:, 1] - yImgMin) / (yImgMax - yImgMin)
             px0 = np.clip(x_norm * (w0 - 1), 0, w0 - 1)
             py0 = np.clip((1.0 - y_norm) * (h0 - 1), 0, h0 - 1)
-            # Match the same k=3 rotation used for the image.
-            px = (h0 - 1) - py0
-            py = px0
+            px, py = rotate_pixels(px0, py0, h0, w0, AFM_ROTATE_K)
             px_by_index = {int(idx): (float(px[k]), float(py[k])) for k, idx in enumerate(overlay_indices)}
 
             # Draw O-H bonds so water molecules are not visually split.
@@ -343,10 +404,14 @@ for j in range(cols): # Columns
                     x1_bond, y1_bond = px_by_index[hi]
                     ax.plot([x0_bond, x1_bond], [y0_bond, y1_bond], color=OH_BOND_COLOR, lw=OH_BOND_LINEWIDTH, zorder=11.5)
 
-            overlay_colors = [jmol_colors[int(n)] for n in overlay_numbers]
-            overlay_sizes = np.full(overlay_numbers.shape[0], float(OVERLAY_O_SIZE))
-            overlay_sizes[overlay_numbers == 1] = OVERLAY_H_SCALE * OVERLAY_O_SIZE
-            ax.scatter(px, py, s=overlay_sizes, c=overlay_colors, edgecolors='k', linewidths=0.3, zorder=12)
+            # Draw overlay atoms from smaller z to larger z so top H atoms stay visible.
+            overlay_z = positions[overlay_indices, 2]
+            for idx in overlay_indices[np.argsort(overlay_z)]:
+                x_atom, y_atom = px_by_index[int(idx)]
+                number = int(numbers[int(idx)])
+                color = jmol_colors[number]
+                size = OVERLAY_O_SIZE if number == 8 else OVERLAY_H_SCALE * OVERLAY_O_SIZE
+                ax.scatter([x_atom], [y_atom], s=size, c=[color], edgecolors='k', linewidths=0.3, zorder=12)
         
         if i == 1:
             ax.axvline(x=x_center, color=simcolor if j==0 else expcolor , linestyle='dashed' if j==0 else 'solid', zorder=10)
@@ -459,15 +524,21 @@ if showAll:
 # Plot the atoms of demonstration configuration  of cross section in the yz plane
 # And the distribution of z positions of O atoms
 # Use the mean z position of Au atoms as the reference plane z=0
-atoms = read_xyz_with_atomic_numbers(demoStructure)
-z_positions_Au = [atom.position[2] for atom in atoms if atom.symbol == 'Au']
-mean_z_Au = sum(z_positions_Au) / len(z_positions_Au)
+demo_atoms = read_xyz_with_atomic_numbers(demoStructure)
+z_positions_Au_demo = [atom.position[2] for atom in demo_atoms if atom.symbol == 'Au']
+mean_z_Au_demo = sum(z_positions_Au_demo) / len(z_positions_Au_demo)
+for atom in demo_atoms:
+    atom.position[2] -= mean_z_Au_demo
+
+# Use the same supercell coordinate frame as AFM/image-region definitions.
+atoms = supercell.copy()
+z_positions_Au_cs = [atom.position[2] for atom in atoms if atom.symbol == 'Au']
+mean_z_Au_cs = sum(z_positions_Au_cs) / len(z_positions_Au_cs)
 for atom in atoms:
-    atom.position[2] -= mean_z_Au
-z_positions_O = [atom.position[2] for atom in atoms if atom.symbol == 'O']
+    atom.position[2] -= mean_z_Au_cs
 
 # View-only azimuth around z axis (camera rotation), without changing atomic coordinates.
-VIEW_ROT_Z_DEG = 210 
+VIEW_ROT_Z_DEG = 0 
 theta = np.deg2rad(VIEW_ROT_Z_DEG)
 
 positions_cs = atoms.get_positions()
@@ -477,6 +548,17 @@ z_plot = positions_cs[:, 2]
 depth_view = positions_cs[:, 0] * np.cos(theta) + positions_cs[:, 1] * np.sin(theta)
 numbers_cs = atoms.get_atomic_numbers()
 
+# Cross-section atomic view: keep only atoms inside AFM image XY region.
+in_image_region_cs = (
+    (positions_cs[:, 0] >= xImgMin) & (positions_cs[:, 0] <= xImgMax) &
+    (positions_cs[:, 1] >= yImgMin) & (positions_cs[:, 1] <= yImgMax)
+)
+u_plot_cs = u_plot[in_image_region_cs]
+z_plot_cs = z_plot[in_image_region_cs]
+depth_view_cs = depth_view[in_image_region_cs]
+numbers_cs_plot = numbers_cs[in_image_region_cs]
+z_positions_O_cfg = z_plot_cs[numbers_cs_plot == 8]
+
 fig = plt.figure(figsize=(6, 2))
 gs = fig.add_gridspec(1, 2, width_ratios=[3, 1])
 ymin, ymax = -2, 12 
@@ -484,9 +566,9 @@ ymin, ymax = -2, 12
 ax1 = fig.add_subplot(gs[0, 0])
 ax1.set_aspect('equal')
 
-# Get the minimum and maximum x and y positions of the atoms
-x_positions = u_plot
-y_positions = z_plot
+# Get the minimum and maximum x and y positions of the plotted atoms
+x_positions = u_plot_cs
+y_positions = z_plot_cs
 xmin, xmax = min(x_positions), max(x_positions)
 ymin, ymax = min(y_positions), max(y_positions)
 
@@ -506,21 +588,21 @@ ax1.tick_params(axis='both', direction='in', labelright=False)
 ax1.set_xlabel(r'$y$ (Å)')
 ax1.set_ylabel(r'$z$ (Å)')
 # ax1.text(offset_text, 1 - offset_text, "b", transform=ax1.transAxes, fontsize=18, fontweight='bold', va='top', ha='left')
-#draw_3d_axis_indicator(ax1, anchor=(0.89, 0.65), length=40, style='x-out')
+draw_3d_axis_indicator(ax1, anchor=(0.85, 0.65), length=36, style='x-out')
 # Add the atoms to the plot as circles.
 # Reorder atoms by view depth so atoms in the back are plotted first.
-for idx in np.argsort(depth_view):
-    number = numbers_cs[idx]
+for idx in np.argsort(depth_view_cs):
+    number = numbers_cs_plot[idx]
     color = jmol_colors[number]
     radius = radii[number]
-    circle = Circle((u_plot[idx], z_plot[idx]), radius, facecolor=color,
+    circle = Circle((u_plot_cs[idx], z_plot_cs[idx]), radius, facecolor=color,
                         edgecolor='k', linewidth=0.5)
     ax1.add_patch(circle)
 
 # Plot the distribution of z positions
 ax2 = fig.add_subplot(gs[0, 1])
 #ax2.hist(z_positions_O, orientation='horizontal', bins=30, density=True, color=jmol_colors[8], alpha=1)
-sns.kdeplot(y=z_positions_O, fill=False, bw_adjust=1, ax=ax2, color=jmol_colors[8], label='O')
+sns.kdeplot(y=z_positions_O_cfg, fill=False, bw_adjust=1, ax=ax2, color=jmol_colors[8], label='O')
 if showAll:
     sns.kdeplot(y=z, fill=False, bw_adjust=1, ax=ax2, color=jmol_colors[8], linestyle=(0, (1, 1)), label='O (all)')
 # ax2.axhline(0, color=jmol_colors[79], linestyle='-', label='Au') # Au surface

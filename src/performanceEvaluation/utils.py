@@ -57,7 +57,7 @@ def radar_plot(ax, mins, maxs, data, labels, color=None, alpha_fill=0.5, errors=
         ax.set_title("")  # Remove default title
         ax.text(-0.20, 0.5, title, va='center', ha='center', rotation=90,
                 rotation_mode='anchor', transform=ax.transAxes, fontsize=plt.rcParams['font.size'])
-    return ax 
+    return ax
 
 if __name__ == "__main__":
     fig, ax = plt.subplots(figsize=(6, 6), subplot_kw=dict(polar=True))
@@ -370,7 +370,7 @@ def draw_unit_cells(ax, origin, cell_vectors, nx, ny, color='black', lw=1.0, ls=
         xs, ys = zip(start[:2], end[:2])
         ax.plot(xs, ys, color=color, lw=lw, linestyle=ls)
 
-def draw_3d_axis_indicator(ax, anchor=(0.95, 0.05), length=40, style='xy'):
+def draw_3d_axis_indicator(ax, anchor=(0.95, 0.05), length=40, style='xy', rotate_k=0):
     """
     Draw a small 3D axis compass with visually equal-length arrows (in pixels), 
     independent of figure size or axis aspect ratio.
@@ -380,6 +380,7 @@ def draw_3d_axis_indicator(ax, anchor=(0.95, 0.05), length=40, style='xy'):
         anchor: (x, y) in axes fraction (0–1)
         length: arrow length in pixels
         style: 'xy' or 'x-out'
+        rotate_k: 90-degree in-plane rotation steps for 'xy' style
     """
     import matplotlib.transforms as mtransforms
 
@@ -405,9 +406,21 @@ def draw_3d_axis_indicator(ax, anchor=(0.95, 0.05), length=40, style='xy'):
         ax.text(end[0], end[1], label, fontsize=12, color=color,
                 ha=ha, va=va, transform=ax.transAxes)
 
+    def rotate_vec_90(dx, dy, k):
+        k = int(k) % 4
+        if k == 0:
+            return dx, dy
+        if k == 1:
+            return -dy, dx
+        if k == 2:
+            return -dx, -dy
+        return dy, -dx
+
     if style == 'xy':
-        draw_arrow(length, 0, 'x', 'red', ha='left', va='center')
-        draw_arrow(0, length, 'y', 'green', ha='center', va='bottom')
+        dx_x, dy_x = rotate_vec_90(length, 0, rotate_k)
+        dx_y, dy_y = rotate_vec_90(0, length, rotate_k)
+        draw_arrow(dx_x, dy_x, 'x', 'red', ha='left', va='center')
+        draw_arrow(dx_y, dy_y, 'y', 'green', ha='center', va='bottom')
         ax.text(anchor[0], anchor[1], 'z', fontsize=12, color='blue',
                 ha='center', va='center', transform=ax.transAxes)
 
