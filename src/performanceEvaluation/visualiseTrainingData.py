@@ -469,6 +469,7 @@ for i in range(3):
         ax1 = fig.add_subplot(gs[0, i])
     else:
         ax1 = fig.add_subplot(gs[0, i], sharey=ax1)
+    ax1.tick_params(axis='both', direction='in')
     yvals = list(range(shape[1]))
     diff = xps[i] - xs[i]
     ax1.invert_yaxis() # >>
@@ -542,7 +543,8 @@ VIEW_ROT_Z_DEG = 0
 theta = np.deg2rad(VIEW_ROT_Z_DEG)
 
 positions_cs = atoms.get_positions()
-u_plot = positions_cs[:, 1] * np.cos(theta) - positions_cs[:, 0] * np.sin(theta)
+# Use local coordinate within image-region horizontal span so axis is ~[0, 25].
+u_plot = positions_cs[:, 1] - yImgMin
 z_plot = positions_cs[:, 2]
 # Depth along viewing direction is used for painter-order plotting.
 depth_view = positions_cs[:, 0] * np.cos(theta) + positions_cs[:, 1] * np.sin(theta)
@@ -567,13 +569,11 @@ ax1 = fig.add_subplot(gs[0, 0])
 ax1.set_aspect('equal')
 
 # Get the minimum and maximum x and y positions of the plotted atoms
-x_positions = u_plot_cs
 y_positions = z_plot_cs
-xmin, xmax = min(x_positions), max(x_positions)
 ymin, ymax = min(y_positions), max(y_positions)
 
 offset = 1
-xmin, xmax = xmin - 3*offset, xmax + 3*offset
+xmin, xmax = 0.0, ss[1]
 ymin, ymax = ymin - 2*offset, ymax + 5*offset
 
 #xticks = np.arange(xmin, xmax, 10)
@@ -584,6 +584,7 @@ ymin, ymax = ymin - 2*offset, ymax + 5*offset
 #ax1.set_yticklabels([f'{y/10:.0f}' for y in yticks])  # Convert Å to nm
 ax1.set_xlim([xmin, xmax])
 ax1.set_ylim([ymin, ymax])
+ax1.set_xticks(np.arange(0, ss[1] + 0.1, 5))
 ax1.tick_params(axis='both', direction='in', labelright=False)
 ax1.set_xlabel(r'$y$ (Å)')
 ax1.set_ylabel(r'$z$ (Å)')
