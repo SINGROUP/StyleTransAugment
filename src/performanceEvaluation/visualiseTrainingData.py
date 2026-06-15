@@ -20,7 +20,7 @@ from utils import get_scan_window_from_xyz, draw_unit_cells, draw_3d_axis_indica
 
 # Input structure for visualization
 demoIndex = 0
-demoStructure = f'../../data/structures/simulations/Label/{demoIndex}.xyz'
+demoStructure = f'../../data/overview/PPAFM/{demoIndex}.xyz'
 exampleInput = '../../data/overview'
 refZ0 = 14.0 # Needs to be confirmed latter
 dz = 0.4 # Units: Å
@@ -44,6 +44,15 @@ simcolor = '#ed9d2c'
 expcolor = '#de461c'
 bg07color = '#479FB1'
 bv17color = '#6E7CBC'
+
+# Overlay controls for top-water atoms on AFM slice z0 = 13.60 A (first column, first row).
+TOP_O_Z_OFFSET = 4.85        # Base threshold above top Au plane, using O as the hook.
+TOP_O_Z_FINE_OFFSET = 0.5    # Fine-tune threshold; increase to select fewer top waters.
+OVERLAY_O_SIZE = 18          # Marker size for O atoms in overlay.
+OVERLAY_H_SCALE = 0.33       # H size auto-scales from O size: H = OVERLAY_O_SIZE * OVERLAY_H_SCALE.
+OH_BOND_CUTOFF = 1.30        # O-H cutoff (A) used to pair H atoms to selected O atoms.
+OH_BOND_LINEWIDTH = 0.8
+OH_BOND_COLOR = '#bfe8ff'
 
 plt.rcParams['font.size']=14
 #plt.rcParams['font.family']='Arial'
@@ -151,20 +160,9 @@ offset = 2.5
 ax1.set_xlim([xy_center[0]-sw_x/2-offset, xy_center[0]+sw_x/2+offset])
 ax1.set_ylim([xy_center[1]-sw_y/2-offset, xy_center[1]+sw_y/2+offset])
 
-# Show P0/P1 in atomic XY view using full XY-plane height as reference.
-p_line_x = 0.50
+# Keep P0/P1 as internal normalized y positions for AFM/cross-section annotations.
 p0_y = 0.20
 p1_y = 0.80
-ax1.plot([p_line_x, p_line_x], [0.0, 1.0], color='grey', linestyle='dashed', lw=1.0,
-         zorder=10, transform=ax1.transAxes)
-ax1.plot(p_line_x, p0_y, marker='.', color='grey', markersize=10, zorder=11,
-         transform=ax1.transAxes)
-ax1.plot(p_line_x, p1_y, marker='.', color='grey', markersize=10, zorder=11,
-         transform=ax1.transAxes)
-ax1.text(p_line_x + 0.04, p0_y, r"P$_0$", va='center', ha='left', fontsize=14,
-         color='grey', transform=ax1.transAxes)
-ax1.text(p_line_x + 0.04, p1_y, r"P$_1$", va='center', ha='left', fontsize=14,
-         color='grey', transform=ax1.transAxes)
 #ax1.set_xlabel(r'$x$ (nm)')
 #ax1.set_ylabel(r'$y$ (nm)')
 ax1.set_xlabel(r'$x$ (Å)')
@@ -223,6 +221,35 @@ in_z_range = (positions[:, 2] >= zMin) & (positions[:, 2] <= zMax)
 selection_mask = is_water_atom & in_xy_range & in_z_range
 Y = supercell[selection_mask]
 
+# Molecule-aware top-water selection for overlay:
+# 1) select top O atoms by z threshold, 2) attach their two nearest H atoms.
+is_o = numbers == 8
+is_h = numbers == 1
+top_o_mask = is_o & in_xy_range & (positions[:, 2] > (au_z_top + TOP_O_Z_OFFSET + TOP_O_Z_FINE_OFFSET))
+top_o_indices = np.where(top_o_mask)[0]
+h_indices = np.where(is_h)[0]
+
+overlay_index_set = set()
+overlay_oh_bonds = []
+for oi in top_o_indices:
+    overlay_index_set.add(int(oi))
+    if h_indices.size == 0:
+        continue
+    d_oh = np.linalg.norm(positions[h_indices] - positions[oi], axis=1)
+    near = np.where(d_oh <= OH_BOND_CUTOFF)[0]
+    if near.size >= 2:
+        chosen_h = h_indices[near[np.argsort(d_oh[near])[:2]]]
+    else:
+        chosen_h = h_indices[np.argsort(d_oh)[:2]]
+    for hi in chosen_h:
+        hi = int(hi)
+        overlay_index_set.add(hi)
+        overlay_oh_bonds.append((int(oi), hi))
+
+overlay_indices = np.array(sorted(overlay_index_set), dtype=int)
+overlay_numbers = numbers[overlay_indices] if overlay_indices.size > 0 else np.array([], dtype=int)
+print(f'Top-water overlay: O atoms={len(top_o_indices)}, total overlay atoms={len(overlay_indices)}')
+
 
 rows, cols = 3, 2
 fig = plt.figure(figsize=(2*cols, 2*rows))
@@ -272,9 +299,10 @@ offset_text_y = 0.05
 # Draw a gray vertical line at horizontal = width/2
 height, width = rotated_image.shape
 x_center = width / 2
-# Markers at 1/6 and 5/6 of the height on the line
-y1 = height / 5
-y2 = 4 * height / 5
+# Keep P0/P1 consistent with the atomic XY panel (axes-fraction y: 0.20 and 0.80).
+# Image pixel y increases downward (origin='upper'), so convert using (1 - y_frac).
+p0_px = (1.0 - p0_y) * (height - 1)
+p1_px = (1.0 - p1_y) * (height - 1)
 for j in range(cols): # Columns
     for i in range(rows): # Rows
         ax = fig.add_subplot(gs[i, j])
@@ -295,13 +323,37 @@ for j in range(cols): # Columns
             image = all_error_maps[i]  # Use the error map
             rotated_image = np.rot90(image, k=3)  # 90 degrees counter-clockwise
             im = ax.imshow(rotated_image, cmap='BrBG', vmin=emin, vmax=emax)
+
+        if i == 0 and j in [0, 1] and overlay_indices.size > 0:
+            h0, w0 = image.shape
+            overlay_xy = positions[overlay_indices][:, :2]
+            x_norm = (overlay_xy[:, 0] - xImgMin) / (xImgMax - xImgMin)
+            y_norm = (overlay_xy[:, 1] - yImgMin) / (yImgMax - yImgMin)
+            px0 = np.clip(x_norm * (w0 - 1), 0, w0 - 1)
+            py0 = np.clip((1.0 - y_norm) * (h0 - 1), 0, h0 - 1)
+            # Match the same k=3 rotation used for the image.
+            px = (h0 - 1) - py0
+            py = px0
+            px_by_index = {int(idx): (float(px[k]), float(py[k])) for k, idx in enumerate(overlay_indices)}
+
+            # Draw O-H bonds so water molecules are not visually split.
+            for oi, hi in overlay_oh_bonds:
+                if oi in px_by_index and hi in px_by_index:
+                    x0_bond, y0_bond = px_by_index[oi]
+                    x1_bond, y1_bond = px_by_index[hi]
+                    ax.plot([x0_bond, x1_bond], [y0_bond, y1_bond], color=OH_BOND_COLOR, lw=OH_BOND_LINEWIDTH, zorder=11.5)
+
+            overlay_colors = [jmol_colors[int(n)] for n in overlay_numbers]
+            overlay_sizes = np.full(overlay_numbers.shape[0], float(OVERLAY_O_SIZE))
+            overlay_sizes[overlay_numbers == 1] = OVERLAY_H_SCALE * OVERLAY_O_SIZE
+            ax.scatter(px, py, s=overlay_sizes, c=overlay_colors, edgecolors='k', linewidths=0.3, zorder=12)
         
         if i == 1:
             ax.axvline(x=x_center, color=simcolor if j==0 else expcolor , linestyle='dashed' if j==0 else 'solid', zorder=10)
-            ax.plot(x_center, y1, marker='.', color='grey', markersize=10, zorder=11)
-            ax.plot(x_center, y2, marker='.', color='grey', markersize=10, zorder=11)
-            ax.text(x_center + 0.04 * width, y1, r"P$_0$", va='center', ha='left', fontsize=14, color='grey')
-            ax.text(x_center + 0.04 * width, y2, r"P$_1$", va='center', ha='left', fontsize=14, color='grey')
+            ax.plot(x_center, p0_px, marker='.', color='grey', markersize=10, zorder=11)
+            ax.plot(x_center, p1_px, marker='.', color='grey', markersize=10, zorder=11)
+            ax.text(x_center + 0.04 * width, p0_px, r"P$_0$", va='center', ha='left', fontsize=14, color='grey')
+            ax.text(x_center + 0.04 * width, p1_px, r"P$_1$", va='center', ha='left', fontsize=14, color='grey')
         ims_col[j] = im 
         ax.axis('off')  # optionally hide axis ticks and labels
         if i == 0:
@@ -313,7 +365,16 @@ for j in range(cols): # Columns
             label_ax.text(x+0.55, 0.0, subLabels[j], ha='center', va='bottom', transform=label_ax.transAxes)
             #ax.text(offset_text, 1 - offset_text_y, subLabels[j], transform=ax.transAxes, va='top', ha='left')
         if j == 0:
-            ax.text(offset_text, offset_text_y-0.05, fr"$z_{i} = {refZ0 - (i + 1) * dz :.2f}$ Å",  transform=ax.transAxes, va='bottom', ha='left', color='lightgrey' if i == 2 else 'k')
+            ax.text(
+                offset_text,
+                offset_text_y - 0.05,
+                fr"$z_{i} = {refZ0 - (i + 1) * dz :.2f}$ Å",
+                transform=ax.transAxes,
+                va='bottom',
+                ha='left',
+                color='lightgrey' if i == 2 else 'k',
+                zorder=30
+            )
 
 # Add colorbars above each column
 pos = ax.get_position()
@@ -354,17 +415,17 @@ for i in range(3):
     ax1.fill_betweenx(yvals, xps[i], xs[i], where=diff < 0, color=bv17color, alpha=0.3, label=rf'$\Delta < 0$', hatch='..', edgecolor='k')
     # ax1.axhline(y=y1, color='gray', linestyle='dashed', lw=0.5, zorder=10, alpha=0.5)
     # ax1.axhline(y=y2, color='gray', linestyle='dashed', lw=0.5, zorder=10, alpha=0.5)
-    ax1.axhline(y=y1, color='gray', linestyle='dashed', lw=0.5, zorder=10, alpha=0.5)
-    if i == 0: ax1.text(vmin + 0.05 * (vmax - vmin), y1, r"P$_0$", va='bottom', ha='left', zorder=11, color='gray')
-    ax1.axhline(y=y2, color='gray', linestyle='dashed', lw=0.5, zorder=10, alpha=0.5)
-    if i == 0: ax1.text(vmin + 0.05 * (vmax - vmin), y2, r"P$_1$", va='bottom', ha='left', zorder=11, color='gray')
+    ax1.axhline(y=p0_px, color='gray', linestyle='dashed', lw=0.5, zorder=10, alpha=0.5)
+    if i == 0: ax1.text(vmin + 0.05 * (vmax - vmin), p0_px, r"P$_0$", va='bottom', ha='left', zorder=11, color='gray')
+    ax1.axhline(y=p1_px, color='gray', linestyle='dashed', lw=0.5, zorder=10, alpha=0.5)
+    if i == 0: ax1.text(vmin + 0.05 * (vmax - vmin), p1_px, r"P$_1$", va='bottom', ha='left', zorder=11, color='gray')
     ax1.set_xlim([vmin, vmax])
     if i != 0: 
         ax1.set_yticklabels([])
     else:
         ax1.tick_params(axis='y', labelleft=True)
     if i == 1: ax1.set_xlabel('Pixel intensity')
-    if i == 2: ax1.legend(loc='right', bbox_to_anchor=(1.13, 0.46), handlelength=1, handletextpad=0.1, labelspacing=0.3)
+    if i == 2: ax1.legend(loc='right', bbox_to_anchor=(1.13, 0.46), handlelength=1, handletextpad=0.1, labelspacing=0.3, frameon=False)
     if i == 0:
         ax1.set_ylabel(r'$y$ (Å)')
 
@@ -378,11 +439,11 @@ plt.close(fig)
 
 
 ########################################################################
-# 3. Get the z distribution for all the structures in the Label folder
+# 3. Get the z distribution for all the structures in the overview/PPAFM folder
 ########################################################################
 showAll = True
 if showAll:
-    samples = read_samples_from_folder('../../data/structures/simulations/Label')
+    samples = read_samples_from_folder('../../data/overview/PPAFM')
     z = []
     for structure in samples:
         atoms = read_xyz_with_atomic_numbers(structure)
@@ -405,9 +466,16 @@ for atom in atoms:
     atom.position[2] -= mean_z_Au
 z_positions_O = [atom.position[2] for atom in atoms if atom.symbol == 'O']
 
-# Rotate view
-atoms.rotate(270, 'x',  rotate_cell=True)
-atoms.rotate(270, 'y', rotate_cell=True)
+# View-only azimuth around z axis (camera rotation), without changing atomic coordinates.
+VIEW_ROT_Z_DEG = 210 
+theta = np.deg2rad(VIEW_ROT_Z_DEG)
+
+positions_cs = atoms.get_positions()
+u_plot = positions_cs[:, 1] * np.cos(theta) - positions_cs[:, 0] * np.sin(theta)
+z_plot = positions_cs[:, 2]
+# Depth along viewing direction is used for painter-order plotting.
+depth_view = positions_cs[:, 0] * np.cos(theta) + positions_cs[:, 1] * np.sin(theta)
+numbers_cs = atoms.get_atomic_numbers()
 
 fig = plt.figure(figsize=(6, 2))
 gs = fig.add_gridspec(1, 2, width_ratios=[3, 1])
@@ -417,8 +485,8 @@ ax1 = fig.add_subplot(gs[0, 0])
 ax1.set_aspect('equal')
 
 # Get the minimum and maximum x and y positions of the atoms
-x_positions = [atom.position[0] for atom in atoms]
-y_positions = [atom.position[1] for atom in atoms]
+x_positions = u_plot
+y_positions = z_plot
 xmin, xmax = min(x_positions), max(x_positions)
 ymin, ymax = min(y_positions), max(y_positions)
 
@@ -438,14 +506,14 @@ ax1.tick_params(axis='both', direction='in', labelright=False)
 ax1.set_xlabel(r'$y$ (Å)')
 ax1.set_ylabel(r'$z$ (Å)')
 # ax1.text(offset_text, 1 - offset_text, "b", transform=ax1.transAxes, fontsize=18, fontweight='bold', va='top', ha='left')
-draw_3d_axis_indicator(ax1, anchor=(0.89, 0.65), length=40, style='x-out')
+#draw_3d_axis_indicator(ax1, anchor=(0.89, 0.65), length=40, style='x-out')
 # Add the atoms to the plot as circles.
-# Reorder the atoms based on the z position so that the atoms at the back are plotted first
-atoms = sorted(atoms, key=lambda atom: atom.position[2])
-for atom in atoms:
-    color = jmol_colors[atom.number]
-    radius = radii[atom.number]
-    circle = Circle((atom.x, atom.y), radius, facecolor=color,
+# Reorder atoms by view depth so atoms in the back are plotted first.
+for idx in np.argsort(depth_view):
+    number = numbers_cs[idx]
+    color = jmol_colors[number]
+    radius = radii[number]
+    circle = Circle((u_plot[idx], z_plot[idx]), radius, facecolor=color,
                         edgecolor='k', linewidth=0.5)
     ax1.add_patch(circle)
 
@@ -454,19 +522,19 @@ ax2 = fig.add_subplot(gs[0, 1])
 #ax2.hist(z_positions_O, orientation='horizontal', bins=30, density=True, color=jmol_colors[8], alpha=1)
 sns.kdeplot(y=z_positions_O, fill=False, bw_adjust=1, ax=ax2, color=jmol_colors[8], label='O')
 if showAll:
-    sns.kdeplot(y=z, fill=False, bw_adjust=1, ax=ax2, color=jmol_colors[8], linestyle='dotted', label='O (all)')
+    sns.kdeplot(y=z, fill=False, bw_adjust=1, ax=ax2, color=jmol_colors[8], linestyle=(0, (1, 1)), label='O (all)')
 # ax2.axhline(0, color=jmol_colors[79], linestyle='-', label='Au') # Au surface
-# ax2.axhline(5.89, color='k', linestyle='--', lw=0.5) # 
-# ax2.axhline(4.85, color='k', linestyle='--', lw=0.5) # 
-# ax2.axhline(3.32, color='k', linestyle='--', lw=0.5) # 
+ax2.axhline(5.67, color='k', linestyle='--', lw=0.5) # 
+#ax2.axhline(4.85, color='k', linestyle='--', lw=0.5) # 
+ax2.axhline(3.40, color='k', linestyle='--', lw=0.5) # 
 
-ax2.plot([0, 0.13], [5.89, 5.89], color='k', linestyle='--', lw=0.5)
-ax2.plot([0, 0.05], [4.9, 4.9], color='k', linestyle='--', lw=0.5)
-ax2.plot([0, 0.58], [3.32, 3.32], color='k', linestyle='--', lw=0.5)
+#ax2.plot([0, 0.13], [5.89, 5.89], color='k', linestyle='--', lw=0.5)
+#ax2.plot([0, 0.05], [4.9, 4.9], color='k', linestyle='--', lw=0.5)
+#ax2.plot([0, 0.58], [3.32, 3.32], color='k', linestyle='--', lw=0.5)
 
 
 ax2.set_xlabel('')
-ax2.legend(loc='upper right', handlelength=0.7, labelspacing=0.2, bbox_to_anchor=(1, 1))
+ax2.legend(loc='upper right', handlelength=0.7, labelspacing=0.2, bbox_to_anchor=(1, 1), frameon=False)
 # Hide the y-axis labels on the second plot
 ax2.tick_params(axis='y', labelleft=True)
 ax2.set_xlabel(r'Density $\rho(z)$')
