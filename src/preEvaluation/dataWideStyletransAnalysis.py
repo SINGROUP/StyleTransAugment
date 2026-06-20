@@ -13,6 +13,7 @@ import numpy as np
 import pandas as pd
 from PIL import Image
 from scipy.ndimage import gaussian_filter, sobel
+from scipy.stats import gaussian_kde
 
 try:
 	import cv2
@@ -314,6 +315,29 @@ def sem(values):
 	if valid.size <= 1:
 		return np.nan
 	return float(np.std(valid, ddof=1) / np.sqrt(valid.size))
+
+
+def plot_kde_density(ax, values, color, label, x_grid):
+	valid = np.asarray(values, dtype=float)
+	valid = valid[np.isfinite(valid)]
+	if valid.size == 0:
+		return
+
+	# Fall back to a narrow Gaussian when KDE is ill-posed (e.g., single/constant values).
+	if valid.size <= 1 or np.allclose(valid, valid[0]):
+		mu = float(valid[0])
+		sigma = 0.015
+		y = np.exp(-0.5 * ((x_grid - mu) / sigma) ** 2) / (sigma * np.sqrt(2.0 * np.pi))
+	else:
+		try:
+			y = gaussian_kde(valid, bw_method="scott")(x_grid)
+		except Exception:
+			mu = float(np.mean(valid))
+			sigma = max(1e-3, float(np.std(valid, ddof=0)))
+			y = np.exp(-0.5 * ((x_grid - mu) / sigma) ** 2) / (sigma * np.sqrt(2.0 * np.pi))
+
+	ax.plot(x_grid, y, color=color, linewidth=2.0, label=label)
+	ax.fill_between(x_grid, 0.0, y, color=color, alpha=0.16)
 
 
 def create_sanity_plot(ssim_df, corr_df, output_path, max_samples=2):
@@ -848,28 +872,28 @@ def main():
 	ax1 = fig.add_subplot(gs[0, 1])
 
 	if len(ssim_df) > 0 or len(feature_df) > 0:
-		bins = np.linspace(0.0, 1.0, 41)
+		x_density = np.linspace(0.0, 1.0, 401)
 		if len(ssim_df) > 0:
-			ax_dist.hist(
+			plot_kde_density(
+				ax_dist,
 				ssim_df["ssim"].to_numpy(dtype=float),
-				bins=bins,
-				histtype="step",
-				linewidth=2.0,
 				color=ssim_color,
 				label="SSIM",
+				x_grid=x_density,
 			)
 		if len(feature_df) > 0:
-			ax_dist.hist(
+			plot_kde_density(
+				ax_dist,
 				feature_df["feature_dice"].to_numpy(dtype=float),
-				bins=bins,
-				histtype="step",
-				linewidth=2.0,
 				color=dftcolor,
 				label="Feature Dice",
+				x_grid=x_density,
 			)
 
-	ax_dist.set_xlabel("Similarity")
-	ax_dist.set_ylabel("Count")
+	ax_dist.set_xlabel(r"Similarity $s$")
+	ax_dist.set_ylabel(r"Probability density $\rho(s)$")
+	ax_dist.set_xlim(0.0, 1.0)
+	ax_dist.set_ylim(bottom=0.0)
 	ax_dist.legend(loc="best", frameon=False, ncol=2)
 	ax_dist.tick_params(axis="both", which="both", direction="in", top=True, right=True)
 
@@ -931,8 +955,8 @@ def main():
 			zorder=4,
 		)
 		ax1.fill_between(x, y_t - e_t, y_t + e_t, alpha=0.15, color=expcolor)
-	ax1.set_xlabel("Adjacent pair index (i: i vs i+1)")
-	ax1.set_ylabel("Correlation")
+	ax1.set_xlabel(r"Slice index $i$")
+	ax1.set_ylabel(r"Correlation $C(i, i+1)$")
 	ax1.set_ylim(-1.05, 1.05)
 	ax1.legend(loc="best", frameon=False, ncol=2)
 	ax1.grid(alpha=0.2)
