@@ -29,3 +29,4 @@ dependencies:
       - torchmetrics
       - torch-fidelity
       - drawarrow
+      - opencv-python
