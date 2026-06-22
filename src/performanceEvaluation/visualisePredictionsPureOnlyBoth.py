@@ -20,6 +20,7 @@ def extract_lambda_values(s):
 models = ['Ref_Pure_C9', 'Ref_best', 'PPAFM2Exp_CoAll_L20_L1_Elatest_Only_C7', 'PPAFM2Exp_CoAll_L20_L1_Elatest_C1']
 angles = [0, 90, 180, 270]
 samples = ['Ying_Jiang_1', 'Ying_Jiang_2_1', 'Ying_Jiang_2_2', 'Ying_Jiang_3', 'Ying_Jiang_5', 'Ying_Jiang_6'] # 'Ying_Jiang_4'
+sizes = [(32, 32), (34, 34), (34, 34), (40, 40), (40,40), (39, 39)] # 'Ying_Jiang_4'
 indexes = [[0, 8], [0, 8], [0, 8], [0, 8], [0, 8], [0, 8], [0, 6]] 
 
 # %%
@@ -46,6 +47,7 @@ for perspective in ['xy']:
         fig, axs = plt.subplots(numRows, numCols, figsize=(numCols*2, numRows*2+3))
 
         for i, sample in enumerate(samples):
+            x_size, y_size = sizes[i]
             # Load the input image: close and far 
             closeImg = '{}/{}_{}.png'.format(expImage, sample, indexes[i][0])
             farImg = '{}/{}_{}.png'.format(expImage, sample, indexes[i][1])
@@ -94,32 +96,23 @@ for perspective in ['xy']:
                     circle = Circle((x, y), scaled_radius, facecolor=color, edgecolor='k', linewidth=0.5)
                     axs[i, j+2].add_patch(circle)
 
-                x_positions = [atom.position[0] for atom in atoms]
-                y_positions = [atom.position[1] if perspective == 'xy' else atom.position[2] for atom in atoms]
-
                 if j == 0:
-                    xmin, xmax = min(x_positions), max(x_positions)
-                    ymin, ymax = min(y_positions), max(y_positions)
-                offset = 1
+                    x_positions = [atom.position[0] for atom in atoms]
+                    y_positions = [atom.position[1] if perspective == 'xy' else atom.position[2] for atom in atoms]
 
-                # Calculate the center and the maximum span to ensure square axes
-                x_center = (xmin + xmax) / 2
-                y_center = (ymin + ymax) / 2
-                span = max(xmax - xmin, ymax - ymin) / 2 + 6 * offset  # add padding
-
-                axs[i, j+2].set_xlim([x_center - span, x_center + span])
-                axs[i, j+2].set_ylim([y_center - span, y_center + span])
+                axs[i, j+2].set_xlim([0, x_size])
+                axs[i, j+2].set_ylim([0, y_size])
                 # Draw 1 nm scale bar at top left for the first model
                 if j == 0:
                     # 1 nm in Angstroms (10 Å)
                     scale_length = 10  # 1 nm = 10 Å
                     # Place bar 5% from left and 10% from top
-                    x0 = x_center - span + 0.05 * (2 * span)
-                    y0 = y_center + span - 0.98 * (2 * span)
+                    x0 = 0.05 * x_size
+                    y0 = 0.02 * y_size
                     x1 = x0 + scale_length
                     y1 = y0
                     axs[i, j+2].plot([x0, x1], [y0, y1], color='k')
-                    axs[i, j+2].text((x0 + x1) / 2, y0 + 0.03 * (2 * span), '1 nm', color='k',
+                    axs[i, j+2].text((x0 + x1) / 2, y0 + 0.03 * y_size, '1 nm', color='k',
                                 ha='center', va='bottom', fontsize=10)
         # Add the sublabels
         #lambdas = [extract_lambda_values(model) for model in models[1:]]
