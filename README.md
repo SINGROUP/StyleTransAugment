@@ -73,3 +73,6 @@ Or
       url={https://arxiv.org/abs/2509.02240}, 
 }
 ```
+
+## Notes
+1. The binary classifier used in this work is stored [here](https://github.com/huangchieh/SimulationRealClassifier). 
