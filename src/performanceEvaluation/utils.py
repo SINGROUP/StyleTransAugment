@@ -196,7 +196,7 @@ def plot_joint_distribution(xs, ys, x_min, x_max, y_min, y_max, x_label, y_label
     if show: plt.show()
     plt.close()
 
-def plot_joint_distributions(z_thresholds, npz_prefix, npz_x, npz_y, colors, markers,  x_min, x_max, y_min, y_max, x_label, y_label, image_prefix, linestypes, show):
+def plot_joint_distributions(z_thresholds, npz_prefix, npz_x, npz_y, colors, markers,  x_min, x_max, y_min, y_max, x_label, y_label, image_prefix, linestypes, show, sample_counts=None):
     sns.set(style="white")
     fig = plt.figure(figsize=(3.85, 3.85))
     grid = plt.GridSpec(2, 2, width_ratios=[4, 1], height_ratios=[1, 4], hspace=0.015, wspace=0.015)
@@ -264,6 +264,18 @@ def plot_joint_distributions(z_thresholds, npz_prefix, npz_x, npz_y, colors, mar
     #     for label, color in colors.items() ]
     # ax_marg_x.legend(handles=legend_lines, loc='lower center', frameon=False,
     #                  ncol=1, bbox_to_anchor=(0.15, 0.00), fontsize=10)
+    
+    # Add sample count annotations if provided
+    if sample_counts is not None:
+        y_pos = 0.95
+        for key in z_thresholds.keys():
+            if key in sample_counts:
+                ax_joint.text(0.02, y_pos, fr"$n_\text{{{key}}} = {sample_counts[key]}$",
+                             transform=ax_joint.transAxes, ha='left', va='top',
+                             fontsize=10, color=colors[key],
+                             bbox=dict(facecolor='white', alpha=0.6, edgecolor='none', boxstyle='round,pad=0.3'))
+                y_pos -= 0.12
+    
     fig.subplots_adjust(left=0.25, right=0.99, top=0.92, bottom=0.15,
                         hspace=0.01, wspace=0.01)
 

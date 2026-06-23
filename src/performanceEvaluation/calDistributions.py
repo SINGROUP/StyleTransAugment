@@ -23,6 +23,7 @@ if __name__ == '__main__':
         # Read the samples
         sampleFolder = os.path.join(structurePath, structure, 'Prediction_c')
         samples = read_samples_from_folder(sampleFolder)
+        print('Number of input samples: {}'.format(len(samples)))
         print('Calculating for structure: {}'.format(structure))
 
         # RDF and OO, OH distances distirbution

@@ -22,15 +22,16 @@ bv17color = '#6E7CBC'
 
 baseOut = '../../results/compare_distributions/'
 os.makedirs(baseOut, exist_ok=True)
-show = False
+show = True
 
 def plot_multi_2d_scatter(data_dict, distance_map, convert_label_func,
                        ncols=6, nrows=6, xlabel=r'$x$', ylabel=r'$y$',
                        xlim=None, ylim=None,
                        baseOut='../../results/compare_distributions/',
-                       property_name="2D_property", show=False):
+                       property_name="2D_property", show=False, sample_counts=None,
+                       sample_count_style=None, wd_text_style=None):
     """
-    Improved version that adds model labels and WD distances to each subplot.
+    Improved version that adds model labels, sample counts, and WD distances to each subplot.
     """
     fig, axes = plt.subplots(nrows=nrows, ncols=ncols,
                              figsize=(ncols * 1.8, nrows * 1.7),
@@ -87,14 +88,45 @@ def plot_multi_2d_scatter(data_dict, distance_map, convert_label_func,
             color= ycolor,
             bbox=dict(facecolor='white', alpha=0.8, edgecolor='none', boxstyle='round,pad=0.05')
         )
-        # Plot WD distance below the label (if available and > 0)
-        if wd is not None and wd > 0:
+        # Plot sample count below the label
+        if sample_counts is not None and key in sample_counts:
+            count_style = {
+                'x': 0.02,
+                'y': 0.10,
+                'fontsize': 9,
+                'ha': 'left',
+                'va': 'top',
+                'bbox': dict(facecolor='white', alpha=0.7, edgecolor='none', boxstyle='round,pad=0.03')
+            }
+            if sample_count_style is not None:
+                count_style.update(sample_count_style)
             ax.text(
-            0.02, 0.10, fr"$\mathrm{{WD}}(\cdot, \mathcal{{U}}_\mathrm{{Top}}) = {wd:.5f}$",
-            ha='left', va='top', transform=ax.transAxes,
-            fontsize=10,
+            count_style['x'], count_style['y'], fr"$n = {sample_counts[key]:.0f}$",
+            ha=count_style['ha'], va=count_style['va'], transform=ax.transAxes,
+            fontsize=count_style['fontsize'],
             color='black',
-            bbox=dict(facecolor='white', alpha=0.7, edgecolor='none', boxstyle='round,pad=0.03')
+            bbox=count_style['bbox']
+            )
+        # Plot WD distance below the sample count (if available and > 0)
+        if wd is not None and wd > 0:
+            wd_style = {
+                'x': 0.02,
+                'y_with_count': 0.02,
+                'y_without_count': 0.10,
+                'fontsize': 8,
+                'ha': 'left',
+                'va': 'top',
+                'bbox': dict(facecolor='white', alpha=0.7, edgecolor='none', boxstyle='round,pad=0.03')
+            }
+            if wd_text_style is not None:
+                wd_style.update(wd_text_style)
+            y_pos = wd_style['y_with_count'] if sample_counts is not None and key in sample_counts else wd_style['y_without_count']
+            ax.text(
+            wd_style['x'], y_pos, fr"$\mathrm{{WD}}(\cdot, \mathcal{{U}}_\mathrm{{Top}}) = {wd:.5f}$",
+            ha=wd_style['ha'], va=wd_style['va'], transform=ax.transAxes,
+            fontsize=wd_style['fontsize'],
+            color='black',
+            bbox=wd_style['bbox']
             )
         # Add "Min" or "Max" at top right corner if needed (bold font)
         if i == 2:  # Excluding 'All' and 'Top', this is the third plot
@@ -149,7 +181,9 @@ def plot_multi_kdes(
     right_margin=0.26,
     baseOut=baseOut, 
     property_name=None, 
-    show=False
+    show=False,
+    sample_counts=None,
+    sample_count_style=None
 ):
     """
     Plot multiple KDEs in vertically overlapping subplots with colormap fill and black edges.
@@ -231,6 +265,28 @@ def plot_multi_kdes(
         ax.tick_params(left=False, labelleft=False, bottom=False, labelbottom=False)
         for spine in ['left', 'right', 'top', 'bottom']:
             ax.spines[spine].set_visible(False)
+
+        # --- Add sample count annotation if provided ---
+        if sample_counts and i < len(sample_counts) and sample_counts[i] is not None:
+            count_style = {
+                'x': 0.98,
+                'y': 0.95,
+                'fontsize': 9,
+                'ha': 'right',
+                'va': 'top',
+                'bbox': dict(facecolor='white', alpha=0.7, edgecolor='none', boxstyle='round,pad=0.03')
+            }
+            if sample_count_style is not None:
+                count_style.update(sample_count_style)
+            ax.text(
+            count_style['x'], count_style['y'],
+            fr"$n = {sample_counts[i]:.0f}$",
+            transform=ax.transAxes,
+            ha=count_style['ha'],
+            va=count_style['va'],
+            fontsize=count_style['fontsize'],
+            bbox=count_style['bbox']
+            )
 
         # --- Add WD annotation if provided ---
         if annotations and annotations[i] is not None:
@@ -382,6 +438,25 @@ def plot_distribution_property(property_name):
     "ThetaOH_dist": 5.0,  # special case
     }
 
+    # Tune sample-count label position/size per 1D property.
+    # Coordinates are in axes fraction (0 to 1).
+    sample_count_style_1d_map = {
+        "OO_dist": {'x': 0.50, 'y': 0.2, 'fontsize': 10, 'ha': 'right', 'va': 'top'},
+        "OH_dist": {'x': 0.50, 'y': 0.2, 'fontsize': 10, 'ha': 'right', 'va': 'top'},
+        "HOH_dist": {'x': 0.90, 'y': 0.2, 'fontsize': 10, 'ha': 'right', 'va': 'top'},
+        "ThetaOH_dist": {'x': 0.80, 'y': 0.2, 'fontsize': 10, 'ha': 'right', 'va': 'top'},
+    }
+
+    # Tune sample-count and WD text for 2D properties.
+    sample_count_style_2d_map = {
+        "Hbonds": {'x': 0.02, 'y': 0.40, 'fontsize': 10, 'ha': 'left', 'va': 'top'},
+        "OrderP": {'x': 0.02, 'y': 0.90, 'fontsize': 10, 'ha': 'left', 'va': 'top'},
+    }
+    wd_text_style_2d_map = {
+        "Hbonds": {'x': 0.02, 'y_with_count': 0.1, 'y_without_count': 0.10, 'fontsize': 10, 'ha': 'left', 'va': 'top'},
+        "OrderP": {'x': 0.02, 'y_with_count': 0.1, 'y_without_count': 0.10, 'fontsize': 10, 'ha': 'left', 'va': 'top'},
+    }
+
     if property_name not in file_key_map:
         raise ValueError(f"Unknown property_name: {property_name}")
     key = file_key_map[property_name]
@@ -506,6 +581,9 @@ def plot_distribution_property(property_name):
             annotations.append(None)
         else:
             annotations.append(distance_map[g])
+    # Calculate sample counts for each group
+    sample_counts_list = [len(df[df['group'] == g]['value'].values) for g in ordered_groups]
+    
     if property_name in ['OO_dist', 'OH_dist', 'HOH_dist', 'ThetaOH_dist']:
         plot_multi_kdes(
             datasets=[df[df['group'] == g]['value'].values for g in ordered_groups],
@@ -520,9 +598,13 @@ def plot_distribution_property(property_name):
             annotations=annotations, 
             property_name=property_name, 
             show=show,
+            sample_counts=sample_counts_list,
+            sample_count_style=sample_count_style_1d_map.get(property_name, None),
         )
     elif property_name in ['Hbonds', 'OrderP']:
         data_dict = extract_2d_group_data(df, ordered_groups)
+        # Create sample count dict for 2D scatter
+        sample_count_dict = {g: len(df[df['group'] == g]['value'].values) for g in ordered_groups}
         plot_multi_2d_scatter(
             data_dict=data_dict,
             distance_map=distance_map,
@@ -533,6 +615,9 @@ def plot_distribution_property(property_name):
             ylim=ylim_map[property_name],
             property_name=property_name, 
             show=show,
+            sample_counts=sample_count_dict,
+            sample_count_style=sample_count_style_2d_map.get(property_name, None),
+            wd_text_style=wd_text_style_2d_map.get(property_name, None),
         )
 
 
