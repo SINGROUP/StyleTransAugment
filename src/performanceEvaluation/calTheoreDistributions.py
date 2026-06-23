@@ -58,6 +58,7 @@ if __name__ == '__main__':
         sampleFolder = os.path.join(inputFolder, structure) 
         samples = read_samples_from_folder(sampleFolder)
         print('Calculating for structure: {}'.format(structure))
+        print('  Number of input samples: {}'.format(len(samples)))
 
         fig, axs = plt.subplots(2, 2, figsize=(6, 6))
         axs = axs.flatten()
@@ -83,6 +84,7 @@ if __name__ == '__main__':
         #markers = {'All': 'o',  'Bottom': 's', 'Top': 'p'}
         markers = {'All': 'o',  'Top': 's'}
         num_points = 120
+        oo_counts = {}  # Track sample counts for All and Top
         for key, value in z_thresholds.items():
             label = 'OO_distances_{}_{}'.format(key, structure)
             legend = '{}'.format(key) 
@@ -94,6 +96,8 @@ if __name__ == '__main__':
                 print('Calculating OO_distance ...')
                 OO_distances = mean_rdf(samples, 'O', 'O', r_max=r_max, mic=mic, aboveZthres=value, onlyDistances=True)
                 np.savez(npzFile, OO=OO_distances, r_max=r_max)
+            oo_counts[key] = len(OO_distances)
+            print('  OO_distance_{}: {} values'.format(key, len(OO_distances)))
             if key != 'All' and hist==True:
                 axs[0].hist(OO_distances, bins=bins, histtype='step', density=True, linewidth=0.5, color=colors[key], alpha=1)
             #sns.kdeplot(OO_distances, ax=axs[0], linewidth=1, label=legend, bw_adjust=1.5, color=colors[key], linestyle=linestypes[key], fill=fills[key], alpha=0.3)
@@ -112,11 +116,21 @@ if __name__ == '__main__':
         ncol=1,
         loc='upper left')
         axs[0].tick_params(axis='both', direction='in')
+        # Add sample counts with colors
+        y_pos = 0.78
+        axs[0].text(0.6, y_pos+0.14, fr"$n_\text{{All}} = {oo_counts['All']}$",
+                   transform=axs[0].transAxes, ha='left', va='top',
+                   fontsize=11, color=colors['All'],
+                   bbox=dict(facecolor='white', alpha=0.6, edgecolor='none', boxstyle='round,pad=0.3'))
+        axs[0].text(0.6, y_pos+0.01, fr"$n_\text{{Top}} = {oo_counts['Top']}$",
+                   transform=axs[0].transAxes, ha='left', va='top',
+                   fontsize=11, color=colors['Top'],
+                   bbox=dict(facecolor='white', alpha=0.6, edgecolor='none', boxstyle='round,pad=0.3'))
 
-        # %%
         # O-H distances
         r_max = 1.25
         num_points = 500
+        oh_counts = {}  # Track sample counts for All and Top
         for key, value in z_thresholds.items():
             label = 'OH_distances_{}_{}'.format(key, structure)
             legend = 'OH {} ({})'.format(key, structure) if structure != 'P' else 'OH {} (Reference)'.format(key)
@@ -128,6 +142,8 @@ if __name__ == '__main__':
                 print('Calculating OH_distance ...')
                 OH_distances = mean_rdf(samples, 'O', 'H', r_max=r_max, mic=mic, aboveZthres=value, onlyDistances=True)
                 np.savez(npzFile, OH=OH_distances, r_max=r_max)
+            oh_counts[key] = len(OH_distances)
+            print('  OH_distance_{}: {} values'.format(key, len(OH_distances)))
             if key != 'All' and hist==True:
                 axs[1].hist(OH_distances, bins=bins, histtype='step', density=True, linewidth=0.5, color=colors[key], alpha=1)
             #sns.kdeplot(OH_distances, ax=axs[1], linewidth=1, label=legend, bw_adjust=1.5, color=colors[key], linestyle=linestypes[key], fill=fills[key], alpha=0.3)
@@ -142,7 +158,16 @@ if __name__ == '__main__':
         axs[1].xaxis.set_minor_locator(AutoMinorLocator())
         axs[1].tick_params(which='minor', length=3, width=1, direction='in')
         axs[1].tick_params(which='major', length=5, width=1.2, direction='in')
-        # %%
+        # Add sample counts with colors
+        y_pos = 0.78
+        axs[1].text(0.6, y_pos + 0.14, fr"$n_\text{{All}} = {oh_counts['All']}$",
+                   transform=axs[1].transAxes, ha='left', va='top',
+                   fontsize=11, color=colors['All'],
+                   bbox=dict(facecolor='white', alpha=0.6, edgecolor='none', boxstyle='round,pad=0.3'))
+        axs[1].text(0.6, y_pos + 0.01, fr"$n_\text{{Top}} = {oh_counts['Top']}$",
+                   transform=axs[1].transAxes, ha='left', va='top',
+                   fontsize=11, color=colors['Top'],
+                   bbox=dict(facecolor='white', alpha=0.6, edgecolor='none', boxstyle='round,pad=0.3'))
         # H-O-H angles
         print('Plotting H-O-H ...')
         firstTwo = False
@@ -150,8 +175,9 @@ if __name__ == '__main__':
         r_max = 1.25
         y_lim = 0.4
         num_points = 500
+        hoh_counts = {}  # Track sample counts for All and Top
         for key, value in z_thresholds.items():
-            label = "HOH_dist_{}_{}".format(key, structure)
+            label = "HOH_dist_{}_{}" .format(key, structure)
             legend = 'HOH {} ({})'.format(key, structure) if structure != 'P' else 'HOH {} (Reference)'.format(key)
             npzFile = '{}/HOH_{}.npz'.format(npzOut, key)
             if os.path.exists(npzFile):
@@ -161,6 +187,8 @@ if __name__ == '__main__':
                 print('Calculating HOH_distance ...')
                 angles = mean_adf(samples, 'H', 'O', 'H', r_max=r_max, firstTwo=firstTwo, mic=mic, onlyAngle=onlyAngle, aboveZthres=value)
                 np.savez(npzFile, HOH=angles)
+            hoh_counts[key] = len(angles)
+            print('  HOH_angle_{}: {} values'.format(key, len(angles)))
             if key != 'All' and hist==True:
                 axs[2].hist(angles, bins=bins, histtype='step', density=True, linewidth=0.5, color=colors[key], alpha=0.2)
             #sns.kdeplot(angles, ax=axs[2], linewidth=1, label=legend, bw_adjust=1.5, color=colors[key], linestyle=linestypes[key], fill=fills[key], alpha=0.3)
@@ -173,6 +201,16 @@ if __name__ == '__main__':
         axs[2].xaxis.set_minor_locator(AutoMinorLocator())
         axs[2].tick_params(which='minor', length=3, width=1, direction='in')
         axs[2].tick_params(which='major', length=5, width=1.2, direction='in')
+        # Add sample counts with colors
+        y_pos = 0.78
+        axs[2].text(0.6, y_pos + 0.14, fr"$n_\text{{All}} = {hoh_counts['All']}$",
+                   transform=axs[2].transAxes, ha='left', va='top',
+                   fontsize=11, color=colors['All'],
+                   bbox=dict(facecolor='white', alpha=0.6, edgecolor='none', boxstyle='round,pad=0.3'))
+        axs[2].text(0.6, y_pos + 0.01, fr"$n_\text{{Top}} = {hoh_counts['Top']}$",
+                   transform=axs[2].transAxes, ha='left', va='top',
+                   fontsize=11, color=colors['Top'],
+                   bbox=dict(facecolor='white', alpha=0.6, edgecolor='none', boxstyle='round,pad=0.3'))
 
         # %%
         # ZOH angles 
@@ -180,9 +218,10 @@ if __name__ == '__main__':
         y_lim = 0.04
         bins = 120 
         num_points = 45
+        zoh_counts = {}  # Track sample counts for All and Top
         for key, value in z_thresholds.items():
-            label = "Theta_OH_dist_{}_{}".format(key, structure)
-            legend = r"$\theta_{{\text{{OH}}}}$ {} ({})".format(key, structure) if structure != 'P' else r"$\theta_{{\text{{OH}}}}$ {} (Reference)".format(key)
+            label = "Theta_OH_dist_{}_{}" .format(key, structure)
+            legend = r"$\theta_{{\text{{OH}}}}$ {} ({})" .format(key, structure) if structure != 'P' else r"$\theta_{{\text{{OH}}}}$ {} (Reference)" .format(key)
             npzFile = '{}/ZOH_{}.npz'.format(npzOut, key)
             if os.path.exists(npzFile):
                 print('Loading Theta_OH_distance from file: {}'.format(npzFile))
@@ -191,6 +230,8 @@ if __name__ == '__main__':
                 print('Calculating Theta_OH_distance ...')
                 angles = mean_adf_OH(samples, r_max=r_max, firstTwo=False, mic=False, onlyAngle=True, aboveZthres=value)
                 np.savez(npzFile, ZOH=angles)
+            zoh_counts[key] = len(angles)
+            print('  ZOH_angle_{}: {} values'.format(key, len(angles)))
             if key != 'All' and hist==True: 
                 axs[3].hist(angles, bins=bins, histtype='step', density=True, linewidth=0.5, color=colors[key], alpha=1)
             #sns.kdeplot(angles, ax=axs[3], linewidth=1, label=legend, bw_adjust=0.5, color=colors[key], linestyle=linestypes[key], fill=fills[key], alpha=0.3)
@@ -204,6 +245,16 @@ if __name__ == '__main__':
         axs[3].xaxis.set_minor_locator(AutoMinorLocator())
         axs[3].tick_params(which='minor', length=3, width=1, direction='in')
         axs[3].tick_params(which='major', length=5, width=1.2, direction='in')
+        # Add sample counts with colors
+        y_pos = 0.78
+        axs[3].text(0.6, y_pos + 0.14, fr"$n_\text{{All}} = {zoh_counts['All']}$",
+                   transform=axs[3].transAxes, ha='left', va='top',
+                   fontsize=11, color=colors['All'],
+                   bbox=dict(facecolor='white', alpha=0.6, edgecolor='none', boxstyle='round,pad=0.3'))
+        axs[3].text(0.6, y_pos + 0.01, fr"$n_\text{{Top}} = {zoh_counts['Top']}$",
+                   transform=axs[3].transAxes, ha='left', va='top',
+                   fontsize=11, color=colors['Top'],
+                   bbox=dict(facecolor='white', alpha=0.6, edgecolor='none', boxstyle='round,pad=0.3'))
 
         fig.subplots_adjust(hspace=0.25, wspace=0.25, left=0.1, bottom=0.1, right=0.95, top=0.98)
         plt.savefig('{}/RDF_ADF_{}.pdf'.format(figureOut, structure))
@@ -227,11 +278,13 @@ if __name__ == '__main__':
         #x_max, y_max = 3.5, 180
         x_label, y_label = rf'$d_{{\text{{O}}_\text{{d}}\text{{O}}_\text{{a}}}}$ (Å)', rf'$\theta_{{\text{{O}}_\text{{d}}\text{{H}}\text{{O}}_\text{{a}}}}$ (°)'
         # Calculate All, Top, and Bottom separately
+        hbond_counts = {}  # Track sample counts for All and Top
         for k, (key, value) in enumerate(z_thresholds.items()):
             npzFile = '{}/Hbond_{}.npz'.format(npzOut, key)
             if os.path.exists(npzFile):
                 print('Loading Hbond from file: {}'.format(npzFile))
                 hbonds = np.load(npzFile)['hbond']
+                OO_OHO = np.load(npzFile)['OO_OHO']
             else:
                 print('Calculating Hbond ...')
                 hbonds = cal_all_hydrogen_bonds(samples, aboveZthres=value, zThresholdO=4.85)
@@ -240,11 +293,13 @@ if __name__ == '__main__':
                 OO_OHO = np.array([distances_da, angles_dha]).T
                 np.savez(npzFile, hbond=hbonds, distance=distances_da, 
                                   angle=angles_dha, OO_OHO=OO_OHO)
+            hbond_counts[key] = len(OO_OHO)
+            print('  Hbond_{}: {} values'.format(key, len(OO_OHO)))
         # Plot All, Top, and Bottom in one figure
         npz_prefix = f"{npzOut}/Hbond"
         npz_x, npz_y = 'distance', 'angle'
         image_prefix = f"{figureOut}/Hbond_{structure}_overlay"
-        plot_joint_distributions(z_thresholds, npz_prefix, npz_x, npz_y, colors, markers,  x_min, x_max, y_min, y_max, x_label, y_label, image_prefix, linestypes, show)
+        plot_joint_distributions(z_thresholds, npz_prefix, npz_x, npz_y, colors, markers,  x_min, x_max, y_min, y_max, x_label, y_label, image_prefix, linestypes, show, sample_counts=hbond_counts)
 
         # %%
         ##################
@@ -256,16 +311,20 @@ if __name__ == '__main__':
         x_min, y_min = sks_.min(), sgs_.min()
         x_max, y_max = sks_.max(), sgs_.max()
         # Calculate All, Top, and Bottom separately 
+        orderp_counts = {}  # Track sample counts for All and Top
         for k, (key, value) in enumerate(z_thresholds.items()):
             npzFile = '{}/OrderP_{}.npz'.format(npzOut, key)
             if os.path.exists(npzFile): 
                 print('Loading OrderParameter from file: {}'.format(npzFile))
+                sk_sg = np.load(npzFile)['sk_sg']
                 sks, sgs = np.load(npzFile)['sks'], np.load(npzFile)['sgs']
             else:
                 print('Calculating OrderParameter ...')
                 sks, sgs = compute_sk_sg_all(samples, r_max=r_max, aboveZthres=value)
                 sk_sg = np.array([sks, sgs]).T
                 np.savez(npzFile, sk_sg=sk_sg, sks=sks, sgs=sgs)
+            orderp_counts[key] = len(sk_sg)
+            print('  OrderP_{}: {} values'.format(key, len(sk_sg)))
             
         #x_min, y_min = -0.3, 0.993 
         #x_min = 0.994
@@ -277,6 +336,6 @@ if __name__ == '__main__':
         npz_prefix = f"{npzOut}/OrderP"
         npz_x, npz_y = 'sks', 'sgs'
         image_prefix = f"{figureOut}/OrderP_{structure}_overlay"
-        plot_joint_distributions(z_thresholds, npz_prefix, npz_x, npz_y, colors, markers, x_min, x_max, y_min, y_max, x_label, y_label, image_prefix, linestypes, show) 
+        plot_joint_distributions(z_thresholds, npz_prefix, npz_x, npz_y, colors, markers, x_min, x_max, y_min, y_max, x_label, y_label, image_prefix, linestypes, show, sample_counts=orderp_counts) 
 # %%
  
