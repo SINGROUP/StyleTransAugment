@@ -38,7 +38,7 @@ show=True
 showScanRegion = False
 showImageRegion = True
 showLattice = True
-showIndicator = True
+showIndicator = False
 
 simcolor = '#ed9d2c'
 expcolor = '#de461c'
@@ -164,6 +164,10 @@ draw_unit_cells(
 if showIndicator:
     draw_3d_axis_indicator(ax1, anchor=(0.86, 0.12), length=40, rotate_k=XY_VIEW_ROTATE_K)
 
+# Keep P0/P1 as internal normalized y positions for AFM/cross-section annotations.
+p0_y = 0.20
+p1_y = 0.80
+
 if showScanRegion:
     sw = ((xy_center[0] - 31.875 / 2, xy_center[1] - 31.875 / 2, sw[0][2]),
           (xy_center[0] + 31.875 / 2, xy_center[1] + 31.875 / 2, sw[1][2]))
@@ -198,6 +202,24 @@ if showImageRegion:
     ax1.plot(ix_plot, iy_plot, color='k', lw=1, label='image region')
     ax1.text(0.12, 0.88, r"$m$", transform=ax1.transAxes, va='top', ha='left')
 
+# Draw cross-section line and P0/P1 markers (matching the AFM image annotation).
+# Physical cross-section: horizontal line at y = xy_center[1] spanning the image x range.
+_cs_phys_y = xy_center[1]
+_cs_phys_x_start = xy_center[0] - ss[0] / 2
+_cs_phys_x_end   = xy_center[0] + ss[0] / 2
+_cs_x0, _cs_y0 = rotate_xy_about_center(_cs_phys_x_start, _cs_phys_y, xy_center[0], xy_center[1], XY_VIEW_ROTATE_K)
+_cs_x1, _cs_y1 = rotate_xy_about_center(_cs_phys_x_end,   _cs_phys_y, xy_center[0], xy_center[1], XY_VIEW_ROTATE_K)
+ax1.plot([_cs_x0, _cs_x1], [_cs_y0, _cs_y1], color=simcolor, linestyle='dashed', lw=1, zorder=10)
+
+# P0 and P1 physical x: same formula as AFM pixel → xImgMin + (1 - p_y) * ss[0].
+_p0_phys_x = (xy_center[0] - ss[0] / 2) + (1.0 - p0_y) * ss[0]
+_p1_phys_x = (xy_center[0] - ss[0] / 2) + (1.0 - p1_y) * ss[0]
+_p0_px, _p0_py = rotate_xy_about_center(_p0_phys_x, _cs_phys_y, xy_center[0], xy_center[1], XY_VIEW_ROTATE_K)
+_p1_px, _p1_py = rotate_xy_about_center(_p1_phys_x, _cs_phys_y, xy_center[0], xy_center[1], XY_VIEW_ROTATE_K)
+ax1.plot(_p0_px, _p0_py, marker='.', color='grey', markersize=10, zorder=11)
+ax1.plot(_p1_px, _p1_py, marker='.', color='grey', markersize=10, zorder=11)
+ax1.text(_p1_px - 0.3, _p1_py + 1.1, r"P$_1$", va='top',    ha='right', fontsize=14, color='grey')
+ax1.text(_p0_px - 0.3, _p0_py - 1.1, r"P$_0$", va='bottom', ha='right', fontsize=14, color='grey')
 
 yticks = np.arange(20, 70.1, 5)
 ax1.set_yticks(yticks)
@@ -211,9 +233,6 @@ offset = 2.5
 ax1.set_xlim([xy_center[0]-sw_x/2-offset, xy_center[0]+sw_x/2+offset])
 ax1.set_ylim([xy_center[1]-sw_y/2-offset, xy_center[1]+sw_y/2+offset])
 
-# Keep P0/P1 as internal normalized y positions for AFM/cross-section annotations.
-p0_y = 0.20
-p1_y = 0.80
 #ax1.set_xlabel(r'$x$ (nm)')
 #ax1.set_ylabel(r'$y$ (nm)')
 ax1.set_xlabel(r'$x$ (Å)')
@@ -589,7 +608,8 @@ ax1.tick_params(axis='both', direction='in', labelright=False)
 ax1.set_xlabel(r'$y$ (Å)')
 ax1.set_ylabel(r'$z$ (Å)')
 # ax1.text(offset_text, 1 - offset_text, "b", transform=ax1.transAxes, fontsize=18, fontweight='bold', va='top', ha='left')
-draw_3d_axis_indicator(ax1, anchor=(0.85, 0.65), length=36, style='x-out')
+if showIndicator:
+	draw_3d_axis_indicator(ax1, anchor=(0.85, 0.65), length=36, style='x-out')
 # Add the atoms to the plot as circles.
 # Reorder atoms by view depth so atoms in the back are plotted first.
 for idx in np.argsort(depth_view_cs):
