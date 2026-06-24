@@ -1,0 +1,86 @@
+{
+  "Ref": {
+    "pattern": "^Ref(_C\\d+)?$",
+    "matched_structures": [
+      "Ref_C0",
+      "Ref",
+      "Ref_C2",
+      "Ref_C6",
+      "Ref_C8",
+      "Ref_C1",
+      "Ref_C4",
+      "Ref_C7",
+      "Ref_C5",
+      "Ref_C3",
+      "Ref_C9"
+    ],
+    "n_structures": 11
+  },
+  "PPAFM2Exp_CoAll_L20_L1_Elatest_Only": {
+    "pattern": "^PPAFM2Exp_CoAll_L20_L1_Elatest_Only(_C\\d+)?$",
+    "matched_structures": [
+      "PPAFM2Exp_CoAll_L20_L1_Elatest_Only_C6",
+      "PPAFM2Exp_CoAll_L20_L1_Elatest_Only_C8",
+      "PPAFM2Exp_CoAll_L20_L1_Elatest_Only_C4",
+      "PPAFM2Exp_CoAll_L20_L1_Elatest_Only_C7",
+      "PPAFM2Exp_CoAll_L20_L1_Elatest_Only_C1",
+      "PPAFM2Exp_CoAll_L20_L1_Elatest_Only_C9",
+      "PPAFM2Exp_CoAll_L20_L1_Elatest_Only_C5",
+      "PPAFM2Exp_CoAll_L20_L1_Elatest_Only_C0",
+      "PPAFM2Exp_CoAll_L20_L1_Elatest_Only_C3",
+      "PPAFM2Exp_CoAll_L20_L1_Elatest_Only_C10",
+      "PPAFM2Exp_CoAll_L20_L1_Elatest_Only_C2"
+    ],
+    "n_structures": 11
+  },
+  "PPAFM2Exp_CoAll_L20_L1_Elatest": {
+    "pattern": "^PPAFM2Exp_CoAll_L20_L1_Elatest(_C\\d+)?$",
+    "matched_structures": [
+      "PPAFM2Exp_CoAll_L20_L1_Elatest_C3",
+      "PPAFM2Exp_CoAll_L20_L1_Elatest_C9",
+      "PPAFM2Exp_CoAll_L20_L1_Elatest",
+      "PPAFM2Exp_CoAll_L20_L1_Elatest_C2",
+      "PPAFM2Exp_CoAll_L20_L1_Elatest_C4",
+      "PPAFM2Exp_CoAll_L20_L1_Elatest_C8",
+      "PPAFM2Exp_CoAll_L20_L1_Elatest_C0",
+      "PPAFM2Exp_CoAll_L20_L1_Elatest_C7",
+      "PPAFM2Exp_CoAll_L20_L1_Elatest_C1",
+      "PPAFM2Exp_CoAll_L20_L1_Elatest_C5"
+    ],
+    "n_structures": 10
+  },
+  "PPAFM2Exp_CoAll_L10_L10_Elatest_Only": {
+    "pattern": "^PPAFM2Exp_CoAll_L10_L10_Elatest_Only(_C\\d+)?$",
+    "matched_structures": [
+      "PPAFM2Exp_CoAll_L10_L10_Elatest_Only_C9",
+      "PPAFM2Exp_CoAll_L10_L10_Elatest_Only_C7",
+      "PPAFM2Exp_CoAll_L10_L10_Elatest_Only_C5",
+      "PPAFM2Exp_CoAll_L10_L10_Elatest_Only_C3",
+      "PPAFM2Exp_CoAll_L10_L10_Elatest_Only_C4",
+      "PPAFM2Exp_CoAll_L10_L10_Elatest_Only_C8",
+      "PPAFM2Exp_CoAll_L10_L10_Elatest_Only_C2",
+      "PPAFM2Exp_CoAll_L10_L10_Elatest_Only_C1",
+      "PPAFM2Exp_CoAll_L10_L10_Elatest_Only_C10",
+      "PPAFM2Exp_CoAll_L10_L10_Elatest_Only_C0",
+      "PPAFM2Exp_CoAll_L10_L10_Elatest_Only_C6"
+    ],
+    "n_structures": 11
+  },
+  "PPAFM2Exp_CoAll_L10_L10_Elatest": {
+    "pattern": "^PPAFM2Exp_CoAll_L10_L10_Elatest(_C\\d+)?$",
+    "matched_structures": [
+      "PPAFM2Exp_CoAll_L10_L10_Elatest_C1",
+      "PPAFM2Exp_CoAll_L10_L10_Elatest_C5",
+      "PPAFM2Exp_CoAll_L10_L10_Elatest_C6",
+      "PPAFM2Exp_CoAll_L10_L10_Elatest_C2",
+      "PPAFM2Exp_CoAll_L10_L10_Elatest_C3",
+      "PPAFM2Exp_CoAll_L10_L10_Elatest_C7",
+      "PPAFM2Exp_CoAll_L10_L10_Elatest",
+      "PPAFM2Exp_CoAll_L10_L10_Elatest_C4",
+      "PPAFM2Exp_CoAll_L10_L10_Elatest_C8",
+      "PPAFM2Exp_CoAll_L10_L10_Elatest_C0",
+      "PPAFM2Exp_CoAll_L10_L10_Elatest_C9"
+    ],
+    "n_structures": 11
+  }
+}
