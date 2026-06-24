@@ -78,11 +78,11 @@ if __name__ == '__main__':
                 std_values = compare_data[numeric_columns].std() / np.sqrt(compare_data[numeric_columns].count())
                 if 'Only' in comp_key:
                     # Style translation only
-                    legend = rf'$F_{{\tilde{{\mathcal{{V}}}}}}(\mathcal{{V}})$: Style Translated'
+                    legend = rf'$F_{{\widetilde{{\mathcal{{V}}}}}}(\mathcal{{V}})$: Style Translated'
                 else:
                     if comp_key == 'Ref':
                         # Handcrafted
-                        legend = rf'$F_{{\bar{{\mathcal{{V}}}}}}(\mathcal{{V}})$: Handcrafted'
+                        legend = rf'$F_{{\overline{{\mathcal{{V}}}}}}(\mathcal{{V}})$: Handcrafted'
                     else:
                         # Hybrid
                         legend = rf'$F_{{\mathcal{{V}}^{{\dagger}}}}(\mathcal{{V}})$: Hybrid'
