@@ -125,12 +125,12 @@ for perspective in ['xy']:
         ]
         '''
         subLabels = [
-            '$v$: Exp. AFM (far)',
-            'Exp. AFM (close)',
-            rf'$F_{{\overline{{\mathcal{{V}}}}}}$: Handcrafted',
-            rf'$F_{{\overline{{\widetilde{{\mathcal{{V}}}}}}}}$: Hybrid',
-            rf'$F_{{\overline{{\mathcal{{V}}}}}}$: on Sim. Style 1',
-            rf'$F_{{\overline{{\mathcal{{V}}}}}}$: on Sim. Style 2',
+            '1.$v$: Exp. AFM (far)',
+            '2.Exp. AFM (close)',
+            rf'3.$F_{{\overline{{\mathcal{{V}}}}}}(v)$: Handcrafted\\Forward',
+            rf'4.$F_{{\mathcal{{V}}^{{\dagger}}}}(v)$: Hybrid\\Forward',
+            rf'5.$F_{{\overline{{\mathcal{{V}}}}}}({{\tilde{{u}}}})$: (20, 1)\\Reverse',
+            rf'6.$F_{{\overline{{\mathcal{{V}}}}}}({{\tilde{{u}}}})$: (50, 0.5)\\Reverse',
         ]
         xoffsets = [-0.14, -0.11, -0.103, -0.055, -0.040, -0.01]
         for j in range(numCols):
